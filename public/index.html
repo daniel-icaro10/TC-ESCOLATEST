@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Sistema de gestão escolar do Centro Educacional Futuro: turmas, alunos, diários e boletins.">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>Portal Escolar Futuro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap">
+<style>
+/* Layout: estrutura do sistema de referência (topo, menu lateral em acordeão, painéis), em versão minimalista e clara.
+   Tema único claro por escolha do cliente. Verde-água só como acento. */
+:root {
+  --bg: #f7f9fa;
+  --surface: #ffffff;
+  --soft: #f3f6f7;
+  --ink: #2a3740;
+  --muted: #7b8a94;
+  --line: #e8edf0;
+  --teal: #2fb3a3;
+  --teal-dark: #1d8f82;
+  --teal-soft: #eaf7f5;
+  --blue: #3f7fc4;
+  --blue-soft: #eef4fb;
+  --gold: #c99325;
+  --gold-soft: #fcf5e6;
+  --red: #c4475b;
+  --red-soft: #fcedef;
+  --green: #4a9a66;
+  --green-soft: #ecf6ef;
+  --on-color: #ffffff;
+  --font: "Nunito Sans", "Segoe UI", Roboto, system-ui, sans-serif;
+  --r: 12px;
+  --shadow: none;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); }
+button, input, select, table { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; line-height: 1.25; text-wrap: balance; }
+h1 { font-size: 1.45rem; font-weight: 800; }
+h2 { font-size: 1.05rem; font-weight: 700; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+
+/* ---------- Barra superior ---------- */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 15; height: 64px; background: var(--surface); color: var(--ink); display: flex; align-items: center; gap: 16px;
+  padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--line); box-shadow: inset 0 3px 0 var(--teal); }
+.logo small { color: var(--muted); }
+.logo { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; min-width: 0; }
+.logo svg { width: 42px; height: 42px; flex: none; }
+.logo b { font-weight: 800; font-size: 1.02rem; line-height: 1.1; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.logo small { font-size: .75rem; opacity: .85; }
+.top-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.top-btn { height: 40px; min-width: 40px; border: 0; background: transparent; color: inherit; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; position: relative; padding: 0 10px; font-weight: 700; }
+.top-btn:hover { background: var(--soft); }
+.top-btn svg { width: 21px; height: 21px; color: var(--muted); }
+.badge { position: absolute; top: 4px; right: 2px; background: var(--red); color: #fff; font-size: .66rem; font-weight: 800; min-width: 17px; height: 17px; border-radius: 99px; display: grid; place-items: center; padding: 0 4px; box-shadow: 0 0 0 2px var(--surface); }
+.menu-toggle { display: none; }
+
+/* ---------- Menu lateral ---------- */
+.shell { display: grid; grid-template-columns: 290px minmax(0, 1fr); align-items: start; }
+.side { position: sticky; top: calc(64px + env(safe-area-inset-top, 0px)); height: calc(100vh - 64px - env(safe-area-inset-top, 0px)); overflow-y: auto; background: var(--surface); border-right: 1px solid var(--line); }
+.user { display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.user .av { width: 42px; height: 42px; border-radius: 50%; background: var(--teal-soft); color: var(--teal-dark); display: grid; place-items: center; font-weight: 800; flex: none; }
+.user b { display: block; font-size: .92rem; text-transform: uppercase; letter-spacing: .02em; line-height: 1.2; }
+.user small { color: var(--muted); font-size: .78rem; }
+.menu { list-style: none; margin: 0; padding: 8px 0 24px; }
+.menu ul { list-style: none; margin: 0; padding: 0; }
+.mi > a, .mi > button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 20px; border: 0; background: transparent; text-decoration: none; color: var(--ink); text-align: left; font-size: .95rem; }
+.mi > a:hover, .mi > button:hover { background: var(--soft); }
+.mi svg.i { width: 20px; height: 20px; color: var(--teal); flex: none; }
+.mi .chev { width: 16px; height: 16px; margin-left: auto; color: var(--muted); transition: transform .15s; flex: none; }
+.mi.open > button .chev { transform: rotate(180deg); }
+.mi .cnt { margin-left: auto; background: var(--red-soft); color: var(--red); font-size: .7rem; font-weight: 800; border-radius: 99px; padding: 0 7px; }
+.mi.open > button { font-weight: 700; }
+.lv0.open { background: var(--soft); }
+.side { border-right-color: var(--line); }
+.mi svg.i { stroke-width: 1.6; }
+.sub { margin-left: 30px !important; border-left: 1px solid var(--line); padding: 2px 0 8px !important; }
+.sub .mi > a, .sub .mi > button { padding: 9px 16px; font-size: .92rem; color: var(--ink); }
+.sub .sub { margin-left: 22px !important; }
+.sub .sub .mi > a { color: var(--muted); padding: 7px 14px; }
+.mi > a.active { color: var(--teal-dark) !important; font-weight: 700; background: var(--teal-soft); }
+.side-sep { height: 1px; background: var(--line); margin: 8px 20px; }
+.scrim { display: none; }
+
+/* ---------- Conteúdo ---------- */
+.view { padding-block: 28px 80px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 22px; max-width: 1240px; width: 100%; min-width: 0; }
+.page-title { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.crumb { font-size: .82rem; color: var(--muted); margin-bottom: 4px; }
+.crumb a { color: var(--blue); text-decoration: none; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); min-width: 0; }
+.panel-h { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.panel-h svg { width: 20px; height: 20px; color: var(--muted); }
+.panel-h .sp { flex: 1; }
+.panel-h.blue { padding: 18px 20px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); padding: 9px 16px; border-radius: 9px; font-weight: 700; font-size: .88rem; text-decoration: none; color: var(--ink); white-space: nowrap; }
+.btn:hover { border-color: var(--muted); }
+.btn svg { width: 17px; height: 17px; }
+.btn.blue { background: var(--teal); border-color: var(--teal); color: var(--on-color); }
+.btn.blue:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
+.btn.teal { background: var(--teal); border-color: var(--teal); color: var(--on-color); }
+.btn.red { background: var(--red); border-color: var(--red); color: #fff; }
+.field { display: flex; flex-direction: column; gap: 5px; font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.field input, .field select { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: .92rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; min-width: 0; }
+.filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 16px 20px; }
+
+/* ---------- Início ---------- */
+.aviso { display: flex; gap: 14px; align-items: center; padding: 14px 18px; border-radius: var(--r); background: var(--teal-soft); }
+.aviso svg { width: 24px; height: 24px; color: var(--teal-dark); flex: none; }
+.aviso b { display: block; }
+.aviso span { font-size: .88rem; color: var(--muted); }
+.home { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.steps { list-style: none; margin: 0; padding: 0; }
+.steps li { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.steps li:last-child { border-bottom: 0; }
+.steps .st { width: 28px; height: 28px; display: grid; place-items: center; }
+.steps .st svg { width: 28px; height: 28px; }
+.steps p { margin: 0; font-size: .92rem; color: var(--muted); }
+.steps p b { color: var(--ink); }
+.steps-foot { text-align: center; padding: 14px 20px; font-size: .85rem; color: var(--muted); border-top: 1px solid var(--line); }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 700; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+.pill.ok { background: var(--green-soft); color: var(--green); }
+.pill.doing { background: var(--teal-soft); color: var(--teal-dark); }
+.pill.todo { background: var(--soft); color: var(--muted); border: 1px solid var(--line); }
+.pill.alert { background: var(--blue-soft); color: var(--blue); }
+.pill.warn { background: var(--gold-soft); color: var(--gold); }
+.pill.bad { background: var(--red-soft); color: var(--red); }
+.diario { padding: 14px 20px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center; font-size: .9rem; }
+.diario:last-child { border-bottom: 0; }
+.diario .g { flex: 1; min-width: 0; }
+.diario b { font-weight: 700; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
+.kpi { padding: 16px 20px; border-right: 1px solid var(--line); }
+.kpi:last-child { border-right: 0; }
+.kpi span { font-size: .78rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.kpi b { display: block; font-size: 1.7rem; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
+
+/* ---------- Tabelas ---------- */
+.table-wrap { overflow-x: auto; }
+table.t { border-collapse: collapse; width: 100%; font-size: .92rem; }
+.t th { text-align: left; font-weight: 800; font-size: .85rem; padding: 12px 16px; background: var(--soft); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.t td { padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.t tbody tr:last-child td { border-bottom: 0; }
+.t tbody tr:hover td { background: color-mix(in srgb, var(--blue-soft) 50%, transparent); }
+.t .c { text-align: center; }
+.t .r { text-align: right; }
+.turma-nome { font-weight: 700; text-transform: uppercase; letter-spacing: .01em; }
+.turma-links { display: flex; flex-direction: column; margin-top: 2px; }
+.turma-links a { color: var(--blue); text-decoration: none; font-size: .92rem; }
+.turma-links a:hover { text-decoration: underline; }
+.criterio { display: inline-block; margin-top: 10px; background: var(--green-soft); color: var(--green); font-size: .72rem; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; letter-spacing: .02em; }
+.etapa b { display: block; font-weight: 700; }
+.etapa small { color: var(--muted); font-size: .76rem; text-transform: uppercase; }
+.cmd { display: flex; gap: 6px; flex-wrap: nowrap; }
+.cmd button { width: 38px; height: 38px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; color: var(--ink); }
+.cmd button svg { width: 17px; height: 17px; }
+.cmd button:hover { border-color: var(--muted); }
+.cmd button { color: var(--muted); }
+.cmd .gold { background: var(--gold-soft); border-color: var(--gold-soft); color: var(--gold); }
+.cmd .gold.off { background: var(--surface); border-color: var(--line); color: var(--muted); }
+.cmd .gold:hover { color: var(--gold); border-color: var(--gold); }
+.cmd .red:hover { color: var(--red); border-color: var(--red); background: var(--red-soft); }
+.cmd button:not(.gold):not(.red):hover { color: var(--teal-dark); border-color: var(--teal); }
+
+/* ---------- Boletim ---------- */
+.bol { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); }
+.bol-title { background: var(--teal-soft); color: var(--teal-dark); border-bottom: 1px solid var(--line); text-align: center; font-weight: 800; font-size: .82rem; letter-spacing: .04em; text-transform: uppercase; padding: 9px 16px; }
+.bol-aluno { display: flex; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.bol-aluno b { text-transform: uppercase; }
+table.b { border-collapse: collapse; width: 100%; font-size: .8rem; font-variant-numeric: tabular-nums; }
+.b th, .b td { border: 1px solid var(--line); padding: 6px 6px; text-align: center; white-space: nowrap; }
+.b thead th { background: var(--soft); font-weight: 800; font-size: .72rem; }
+.b thead tr:first-child th { font-size: .78rem; }
+.b th.dis, .b td.dis { text-align: left; min-width: 150px; position: sticky; left: 0; background: var(--surface); z-index: 1; }
+.b thead th.dis { background: var(--soft); }
+.b td.dis b { display: block; font-size: .78rem; text-transform: uppercase; }
+.b td.dis small { color: var(--muted); font-size: .7rem; text-transform: uppercase; }
+.b .bim-alt { background: color-mix(in srgb, var(--soft) 70%, transparent); }
+.b .med { font-weight: 800; background: var(--blue-soft); }
+.b thead .med { background: color-mix(in srgb, var(--blue-soft) 80%, var(--soft)); }
+.b .low { color: var(--red); }
+.b .fin { font-weight: 800; }
+.b td.empty { color: var(--line); }
+.bol-foot { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px 16px; padding: 10px 16px; font-size: .82rem; border-top: 1px solid var(--line); background: var(--soft); align-items: center; }
+.bol-foot .mid { text-align: center; color: var(--muted); }
+.sit { color: var(--muted); }
+.sit b { color: var(--ink); }
+
+/* ---------- Modal / avisos ---------- */
+.overlay { position: fixed; inset: 0; background: rgba(10,25,30,.5); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.modal { background: var(--surface); border-radius: 14px; width: min(640px, 100%); max-height: calc(100% - 32px); display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,.3); }
+.modal-h { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 22px; }
+.modal-h h2 { font-size: 1.3rem; font-weight: 600; }
+.modal-h p { margin: 4px 0 0; font-size: .86rem; color: var(--muted); }
+.x { width: 36px; height: 36px; border: 0; background: transparent; border-radius: 8px; color: var(--muted); display: grid; place-items: center; }
+.x:hover { background: var(--soft); }
+.x svg { width: 20px; height: 20px; }
+.modal-b { overflow-y: auto; padding: 0 22px; }
+.modal-f { display: flex; justify-content: flex-end; gap: 8px; padding: 18px 22px 22px; border-top: 1px solid var(--line); margin-top: 8px; }
+.rel { width: 100%; border-collapse: collapse; }
+.rel th { background: var(--soft); text-align: left; padding: 10px 12px; font-weight: 600; font-size: .92rem; }
+.rel th:last-child, .rel td:last-child { text-align: right; width: 70px; }
+.rel td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-transform: uppercase; font-size: .88rem; vertical-align: middle; }
+.rel td:first-child, .rel th:first-child { width: 64px; }
+.star, .lupa { width: 44px; height: 38px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; color: var(--muted); }
+.star svg, .lupa svg { width: 18px; height: 18px; }
+.star.on { background: var(--gold-soft); border-color: var(--gold-soft); color: var(--gold); }
+.star.on svg { fill: currentColor; }
+.lupa:hover, .star:hover { border-color: var(--muted); }
+.toast { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: .9rem; z-index: 60; max-width: calc(100% - 32px); }
+.help { position: fixed; right: max(20px, calc(env(safe-area-inset-right, 0px) + 12px)); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--teal-dark); display: grid; place-items: center; box-shadow: 0 4px 14px rgba(30,60,70,.08); z-index: 25; }
+.help svg { width: 22px; height: 22px; }
+.soon { padding: 48px 24px; text-align: center; }
+.soon p { color: var(--muted); max-width: 46ch; margin: 8px auto 0; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1100px) { .home { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .menu-toggle { display: flex; }
+  .side { position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); left: 0; bottom: 0; height: auto; width: min(320px, 86vw); z-index: 40; transform: translateX(-100%); transition: transform .2s; box-shadow: 8px 0 30px rgba(0,0,0,.15); padding-left: env(safe-area-inset-left, 0px); }
+  body.nav-open .side { transform: none; }
+  body.nav-open .scrim { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 30; }
+  .view { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 96px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi:nth-child(2) { border-right: 0; }
+  .kpi:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 720px) {
+  .logo small, .top-btn .lbl-sm { display: none; }
+  /* lista de turmas vira cartões no celular, sem rolagem lateral */
+  table.resp thead { display: none; }
+  table.resp, table.resp tbody, table.resp tr, table.resp td { display: block; width: 100%; }
+  table.resp tr { border-bottom: 1px solid var(--line); padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+  table.resp tr:last-child { border-bottom: 0; }
+  table.resp td { padding: 0; border: 0; }
+  table.resp td[data-l]::before { content: attr(data-l); display: block; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  table.resp td.full { grid-column: 1 / -1; }
+  table.resp td.cmd-cell { grid-column: 1 / -1; padding-top: 4px; }
+  .cmd button { width: 44px; height: 42px; }
+  .bol-foot { grid-template-columns: minmax(0, 1fr); }
+  .bol-foot .mid { text-align: left; }
+  .rel td:first-child, .rel th:first-child { width: 52px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <button class="top-btn menu-toggle" id="menuBtn" aria-label="Abrir menu"></button>
+  <a class="logo" href="#principal">
+    <svg viewBox="0 0 42 42" aria-hidden="true">
+      <circle cx="21" cy="21" r="20" fill="#eaf7f5"/>
+      <circle cx="21" cy="21" r="13" fill="none" stroke="#2fb3a3" stroke-width="2"/>
+      <path d="M8 21h26M21 8c-5 4-5 22 0 26M21 8c5 4 5 22 0 26" fill="none" stroke="#2fb3a3" stroke-width="1.6"/>
+    </svg>
+    <div><b>Centro Educacional Futuro</b><small>Sistema de gestão escolar</small></div>
+  </a>
+  <div class="top-actions">
+    <button class="top-btn" id="mailBtn" aria-label="Mensagens, 2 novas"></button>
+    <button class="top-btn" id="bellBtn" aria-label="Avisos"></button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="side" id="side" aria-label="Menu">
+    <div class="user"><div class="av">SE</div><div><b>Secretaria Escolar</b><small>Ano letivo 2026</small></div></div>
+    <ul class="menu" id="menu"></ul>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <main class="view" id="view"></main>
+</div>
+<button class="help" id="helpBtn" aria-label="Falar com o suporte"></button>
+<div id="layer"></div>
+
+<script>
+/* ================= Ícones ================= */
+const ICONS = {
+  home:'<path d="M4 10.5 12 4l8 6.5V20h-5v-5.5H9V20H4z"/>',
+  star:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/>',
+  megaphone:'<path d="M3 10v4h4l8 4V6L7 10z"/><path d="M19 9a4 4 0 0 1 0 6"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 20c1-4 4.3-6 8-6s7 2 8 6"/>',
+  users:'<circle cx="9" cy="8.5" r="3.5"/><path d="M3 19.5c.7-3.2 3.2-5 6-5s5.3 1.8 6 5"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.6c2.3.2 4 1.8 4.5 4.9"/>',
+  plus:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  cap:'<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5M22 9v6"/>',
+  pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  idcard:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.5-1.6 1.6-2.4 3-2.4s2.5.8 3 2.4M14 10h4M14 14h3"/>',
+  coffee:'<path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M17 11h1.5a2 2 0 0 1 0 4H17M8 3v3M11 3v3M14 3v3"/>',
+  case:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/>',
+  dollar:'<circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.4-1.2-1.6-2-3-2-1.7 0-3 1-3 2.3 0 3 6 1.6 6 4.6 0 1.3-1.3 2.3-3 2.3-1.5 0-2.7-.8-3.1-2M12 6v1.5M12 16.5V18"/>',
+  chart:'<path d="M3 20h18M4 16l5-6 4 4 7-8"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  logout:'<path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/>',
+  chev:'<path d="m6 9 6 6 6-6"/>',
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+  bell:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  list:'<path d="M9 6h11M9 12h11M9 18h11"/><rect x="3.5" y="4.5" width="3" height="3" rx=".5"/><rect x="3.5" y="10.5" width="3" height="3" rx=".5"/><rect x="3.5" y="16.5" width="3" height="3" rx=".5"/>',
+  edit:'<path d="M14 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  unlock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.8-1.2"/>',
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  check:'<path d="m5 12 5 5 9-10"/>',
+  chat:'<path d="M4 5h16v11H9l-5 4z"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'
+};
+const ic = (n, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
+/* ícone de "em andamento" com pontinhos, como no sistema de referência */
+const spinner = `<svg viewBox="0 0 28 28" aria-hidden="true">${[...Array(8)].map((_, i) => { const a = i / 8 * Math.PI * 2; return `<circle cx="${14 + Math.cos(a) * 10}" cy="${14 + Math.sin(a) * 10}" r="${1.4 + i * .25}" fill="var(--green)"/>`; }).join('')}</svg>`;
+const doneIco = `<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--green)"/><path d="m8.5 14.5 3.5 3.5 7.5-8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const alertIco = `<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--blue)"/><path d="M14 7.5v8" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="14" cy="20" r="1.8" fill="#fff"/></svg>`;
+const todoIco = `<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="none" stroke="var(--line)" stroke-width="2.5"/></svg>`;
+
+/* ================= Dados de exemplo ================= */
+let seed = 20260;
+const R = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+const pick = a => a[Math.floor(R() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const trunc1 = v => Math.floor(v * 10 + 1e-9) / 10;
+const half = v => Math.round(v * 2) / 2;
+const fmt = n => n == null ? '' : n.toFixed(1).replace('.', ',');
+
+const NOMES = ['Ana Clara','Miguel','Helena','Arthur','Alice','Gael','Laura','Heitor','Manuela','Theo','Valentina','Davi','Sophia','Bernardo','Lívia','Lorenzo','Isabela','Samuel','Maria Luísa','Gabriel','Cecília','Pedro Henrique','Beatriz','Enzo','Lara','Benício','Giovanna','Rafael','Marina','Lucas','Yasmin','Matheus','Clara','Joaquim','Rebeca','Nicolas','Júlia','Bento','Eloá','Caio','Esther','Murilo','Antonella','Vicente','Luna'];
+const SOBRENOMES = ['Almeida','Barbosa','Cardoso','Carvalho','Castro','Correia','Costa','Dias','Ferreira','Gomes','Lima','Machado','Martins','Melo','Monteiro','Moreira','Nascimento','Oliveira','Pereira','Pinto','Ramos','Ribeiro','Rocha','Santos','Silva','Souza','Teixeira','Vieira','Araújo','Freitas'];
+const PROF_I = ['Rayane Campos','Patrícia Leal','Fernanda Duarte','Juliana Prado','Cláudia Rezende'];
+const PROF = { 'Língua Portuguesa':'Marcos Valente','Matemática':'Renata Siqueira','Ciências':'Tainá Viana','História':'Eduardo Paiva','Geografia':'Simone Fontes','Arte':'Letícia Amaral','Educação Física':'Rodrigo Brandão','Língua Inglesa':'Thaíza Assis' };
+const DISC = Object.keys(PROF);
+const CONTAGEM = [19, 26, 16, 26, 22, 28, 24, 21, 18];
+
+const TURMAS = [], ALUNOS = [];
+let mat = 2026001;
+CONTAGEM.forEach((qtd, i) => {
+  const ano = i + 1, fund1 = ano <= 5, regente = PROF_I[i % PROF_I.length];
+  const t = {
+    id: String(ano), ano,
+    nome: `${ano}º Ano de Escolaridade`,
+    etapa: `${ano}º Ano`,
+    nivel: 'Ensino Fundamental',
+    turno: fund1 ? 'Tarde' : 'Manhã',
+    finalizada: false, bloqueada: false,
+    criterio: ano === 1 ? 'Critério Fundamental 1º Ano demais matérias' : 'Critério Fundamental 2º ao 9º Ano',
+    disciplinas: DISC.map(d => ({ nome: d, prof: (ano === 7 && d === 'Arte') ? null : fund1 && !['Educação Física','Língua Inglesa'].includes(d) ? regente : PROF[d], entregue: R() > .3 })),
+    alunos: []
+  };
+  for (let k = 0; k < qtd; k++) {
+    const base = R() < .12 ? 3.4 + R() * 2.4 : 6.2 + R() * 3.7;
+    const notas = {}, faltas = {};
+    DISC.forEach(d => {
+      const tilt = (R() - .5) * 1.4;
+      notas[d] = [0, 1, 2].map(() => {
+        const v = () => clamp(base + tilt + (R() - .5) * 2.4, 0, 10);
+        const x = { at: half(v() * .3), tbl: half(v() * .7), te: half(v()), pr: half(v()), rp: null };
+        x.media = Math.min(10, trunc1((x.at + x.tbl + x.te + x.pr) / 3));
+        if (x.media < 6 && R() < .5) { x.rp = half(clamp(base + 1 + R() * 2, 0, 10)); if (x.rp > x.media) x.media = trunc1((x.media + x.rp) / 2); }
+        return x;
+      });
+      faltas[d] = R() < .6 ? 0 : Math.floor(R() * (base < 6 ? 6 : 3));
+    });
+    const nascAno = 2026 - 6 - ano + (R() < .2 ? -1 : 0);
+    const a = { id: 'a' + mat, mat: mat++, nome: `${pick(NOMES)} ${pick(SOBRENOMES)} ${pick(SOBRENOMES)}`, turma: t.id,
+      nasc: `${String(1 + Math.floor(R() * 28)).padStart(2, '0')}/${String(1 + Math.floor(R() * 12)).padStart(2, '0')}/${nascAno}`, notas, faltas };
+    t.alunos.push(a); ALUNOS.push(a);
+  }
+  t.alunos.sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR'));
+  TURMAS.push(t);
+});
+const CARGA_TOTAL = 800;
+const mediaAnual = (a, d) => trunc1(a.notas[d].reduce((s, b) => s + b.media, 0) / a.notas[d].length);
+const faltasAluno = a => DISC.reduce((s, d) => s + a.faltas[d], 0);
+const turmaDe = id => TURMAS.find(t => t.id === String(id));
+const alunoDe = id => ALUNOS.find(a => a.id === id);
+const pendentes = () => TURMAS.flatMap(t => t.disciplinas.filter(d => d.prof && !d.entregue).map(d => ({ ...d, turma: t })));
+const semVinculo = t => t.disciplinas.filter(d => !d.prof).map(d => d.nome);
+
+let favs = new Set(['ata', 'boletim', 'ficha', 'assinatura', 'relacao']);
+try { const s = localStorage.getItem('favs'); if (s) favs = new Set(JSON.parse(s)); } catch (e) {}
+const saveFavs = () => { try { localStorage.setItem('favs', JSON.stringify([...favs])); } catch (e) {} };
+const RELATORIOS = [
+  { id:'ata', nome:'Ata de resultados finais' },
+  { id:'boletim', nome:'Boletim de notas por turma', go: t => `#boletim-${t}` },
+  { id:'ficha', nome:'Ficha individual com carga horária' },
+  { id:'assinatura', nome:'Relação de alunos com espaço para assinatura' },
+  { id:'relacao', nome:'Relação de alunos por turma', go: t => `#turma-${t}` },
+  { id:'acomp', nome:'Acompanhamento de diários', go: () => '#diarios' },
+  { id:'aval', nome:'Boletim de notas (avaliações do diário) por turma', go: t => `#boletim-${t}` }
+];
+
+/* ================= Menu lateral (mesma organização do sistema atual) ================= */
+const MENU = [
+  { id:'principal', label:'Principal', icon:'home' },
+  { id:'comunicados', label:'Página de comunicados', icon:'megaphone' },
+  { label:'Central de ajuda', icon:'info', children:[{ id:'tutoriais', label:'Tutoriais' }, { id:'suporte', label:'Falar com o suporte' }] },
+  { label:'Mensagem', icon:'mail', count: 2, children:[{ id:'caixa', label:'Caixa de entrada' }, { id:'nova-msg', label:'Nova mensagem' }] },
+  { label:'Ambiente do aluno', icon:'user', children:[{ id:'portal-aluno', label:'Portal do aluno' }, { id:'app-familia', label:'Aplicativo da família' }] },
+  { label:'Secretaria', icon:'users', children:[
+    { label:'Cadastro', icon:'user', children:[{ id:'alunos', label:'Alunos' }, { id:'responsaveis', label:'Responsáveis' }, { id:'professores', label:'Professores' }] },
+    { label:'Turmas', icon:'pencil', children:[
+      { id:'turmas', label:'Lista de turmas' }, { id:'disciplinas', label:'Disciplinas' }, { id:'habilidades', label:'Habilidades por turmas' },
+      { id:'diarios', label:'Diários' }, { id:'notas', label:'Alteração de notas e faltas' }, { id:'boletim', label:'Boletins' },
+      { id:'simulados', label:'Simulados' }, { id:'historico', label:'Histórico escolar' }, { id:'horarios', label:'Horários' }] },
+    { label:'Matrículas', icon:'idcard', children:[{ id:'matriculas', label:'Matrículas' }, { id:'rematriculas', label:'Rematrículas' }, { id:'pre-matricula', label:'Pré-matrícula' }] }
+  ] },
+  { label:'Pedagógico', icon:'cap', children:[
+    { label:'Professor', icon:'coffee', children:[{ id:'diarios', label:'Meus diários' }, { id:'planejamento', label:'Planejamento de aulas' }] },
+    { label:'Coordenação', icon:'case', children:[{ id:'acompanhamento', label:'Acompanhamento pedagógico' }, { id:'ocorrencias', label:'Ocorrências' }] }
+  ] },
+  { label:'Financeiro', icon:'dollar', children:[{ id:'mensalidades', label:'Mensalidades' }, { id:'inadimplencia', label:'Inadimplência' }] },
+  { id:'relatorios', label:'Central de relatórios', icon:'chart' },
+  { id:'config', label:'Configurações', icon:'settings' },
+  { id:'sair', label:'Sair', icon:'logout' }
+];
+const open = new Set();
+const keyOf = (path) => path.join('>');
+function findPath(items, id, path = []) {
+  for (const it of items) {
+    const p = [...path, it.label];
+    if (it.id === id) return p;
+    if (it.children) { const r = findPath(it.children, id, p); if (r) return r; }
+  }
+  return null;
+}
+function labelOf(items, id) {
+  for (const it of items) { if (it.id === id) return it.label; if (it.children) { const r = labelOf(it.children, id); if (r) return r; } }
+}
+function menuHTML(items, depth, active, path = []) {
+  return items.map(it => {
+    const p = [...path, it.label], k = keyOf(p), lv = `lv${depth}`;
+    if (it.children) {
+      const isOpen = open.has(k);
+      return `<li class="mi ${lv} ${isOpen ? 'open' : ''}">
+        <button data-group="${k}" aria-expanded="${isOpen}">${it.icon ? ic(it.icon, 'i') : ''}<span>${it.label}</span>${it.count ? `<span class="cnt">${it.count}</span>` : ''}${ic('chev', 'chev')}</button>
+        ${isOpen ? `<ul class="sub">${menuHTML(it.children, depth + 1, active, p)}</ul>` : ''}
+      </li>`;
+    }
+    return `<li class="mi ${lv}"><a href="#${it.id}" class="${it.id === active ? 'active' : ''}">${it.icon ? ic(it.icon, 'i') : ''}<span>${it.label}</span></a></li>`;
+  }).join('');
+}
+let currentActive = 'principal';
+function renderMenu() { document.getElementById('menu').innerHTML = menuHTML(MENU, 0, currentActive); }
+function openPathTo(id) {
+  const p = findPath(MENU, id);
+  if (p) for (let i = 1; i < p.length; i++) open.add(keyOf(p.slice(0, i)));
+}
+
+/* ================= Rotas ================= */
+const view = document.getElementById('view');
+const layer = document.getElementById('layer');
+function route() {
+  const h = decodeURIComponent(location.hash.slice(1)) || 'principal';
+  document.body.classList.remove('nav-open');
+  closeLayer();
+  let active = h;
+  if (h.startsWith('turma-')) { active = 'turmas'; viewTurma(h.slice(6)); }
+  else if (h.startsWith('boletim')) { active = 'boletim'; viewBoletim(h.slice(8)); }
+  else if (VIEWS[h]) VIEWS[h]();
+  else if (labelOf(MENU, h)) soon(labelOf(MENU, h));
+  else { active = 'principal'; VIEWS.principal(); }
+  currentActive = active;
+  openPathTo(active);
+  renderMenu();
+  window.scrollTo(0, 0);
+}
+
+/* ================= Telas ================= */
+const VIEWS = {
+  principal() {
+    const pend = pendentes();
+    const totalD = TURMAS.reduce((s, t) => s + t.disciplinas.filter(d => d.prof).length, 0);
+    const passos = [
+      ['doing', 'Entregar diários', `os professores efetuam o preenchimento das avaliações, notas e faltas e efetuam a entrega do diário. ${totalD - pend.length} de ${totalD} entregues.`],
+      ['doing', 'Situação', 'alterar a situação dos alunos para APROVADO(A) ou REPROVADO(A).'],
+      ['todo', 'Encerrar turmas', 'finalizar as turmas de 2026 após o conselho de classe.'],
+      ['done', 'Exercício', 'realizar o cadastro do próximo exercício. Ex.: 2027.'],
+      ['done', 'Turmas', 'realizar o cadastro das turmas do próximo exercício. Ex.: 5º ano 2027.'],
+      ['doing', 'Pré-matrícula', 'disponibilizar a pré-matrícula on-line para novos alunos.'],
+      ['todo', 'Rematrículas', 'rematricular os alunos que permanecem na escola nas próximas turmas.'],
+      ['todo', 'Matrículas', 'realizar as matrículas dos novos alunos.'],
+      ['alert', 'Documentos', 'revisar os documentos pendentes de 14 alunos.']
+    ];
+    const ico = { doing: spinner, done: doneIco, alert: alertIco, todo: todoIco };
+    const tag = { doing: '<span class="pill doing">Em andamento</span>', done: '<span class="pill ok">Concluído</span>', alert: '<span class="pill alert">Atenção</span>', todo: '<span class="pill todo">Pendente</span>' };
+    view.innerHTML = `
+      <div class="aviso">${ic('calendar')}<div><b>Entrega dos diários do 4º bimestre até 11/12/2026</b><span>Conselho de classe marcado para 14/12, às 14h. Pré-matrícula 2027 aberta até 30/11.</span></div></div>
+
+      <div class="home">
+        <section class="panel">
+          <div class="panel-h blue"><h2>Passos para o fechamento do ano letivo</h2></div>
+          <ul class="steps">${passos.map(([s, t, d]) => `<li><span class="st">${ico[s]}</span><p><b>${t}:</b> ${d}</p>${tag[s]}</li>`).join('')}</ul>
+          <div class="steps-foot">O checklist de final de ano deve ser concluído até <b>01/02/2027</b>.</div>
+        </section>
+        <section class="panel">
+          <div class="panel-h"><h2>Diários para devolver</h2><span class="sp"></span><a class="btn blue" href="#diarios">${ic('check')} Acessar diários</a></div>
+          ${pend.slice(0, 6).map(d => `
+            <div class="diario"><div class="g"><div><b>Professor:</b> ${d.prof}</div><div><b>Disciplina:</b> ${d.nome} · ${d.turma.etapa}</div></div><span class="pill warn">4º bim</span></div>`).join('')}
+          <div class="diario" style="justify-content:center"><a href="#diarios" style="color:var(--blue);font-weight:700;text-decoration:none">Ver todos os ${pend.length} diários</a></div>
+        </section>
+      </div>`;
+  },
+
+  turmas() {
+    view.innerHTML = `
+      <div class="page-title">
+        <div><div class="crumb">Secretaria / Turmas</div><h1>Lista de turmas</h1></div>
+        <button class="btn blue" data-act="toast" data-msg="Cadastro de turma entra na próxima etapa">+ Nova turma</button>
+      </div>
+      <section class="panel">
+        <div class="panel-h">${ic('list')}<h2>2026</h2><span class="sp"></span>
+          <label class="field" for="fBusca" style="flex-direction:row;align-items:center;gap:8px"><span style="position:absolute;left:-9999px">Buscar turma</span><input id="fBusca" type="search" placeholder="Buscar turma" style="width:200px"></label>
+        </div>
+        <div class="table-wrap"><table class="t resp">
+          <thead><tr><th>Turma</th><th>Etapa</th><th>Turno</th><th>Finalizada</th><th>Disciplinas sem vínculo</th><th>Comando</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table></div>
+      </section>`;
+    const draw = () => {
+      const q = document.getElementById('fBusca').value.trim().toLowerCase();
+      document.getElementById('rows').innerHTML = TURMAS.filter(t => !q || t.nome.toLowerCase().includes(q)).map(turmaRow).join('');
+    };
+    document.getElementById('fBusca').oninput = draw;
+    draw();
+  },
+
+  alunos() {
+    view.innerHTML = `
+      <div class="page-title"><div><div class="crumb">Secretaria / Cadastro</div><h1>Alunos</h1></div>
+        <button class="btn blue" data-act="toast" data-msg="Cadastro de aluno entra na próxima etapa">+ Novo aluno</button></div>
+      <section class="panel">
+        <div class="filters">
+          <label class="field" for="aNome" style="flex:1;max-width:360px">Nome ou matrícula<input id="aNome" type="search" autocomplete="off"></label>
+          <label class="field" for="aTurma">Turma<select id="aTurma"><option value="">Todas</option>${TURMAS.map(t => `<option value="${t.id}">${t.etapa}</option>`).join('')}</select></label>
+        </div>
+        <div class="table-wrap"><table class="t">
+          <thead><tr><th>Matrícula</th><th>Aluno</th><th>Turma</th><th>Nascimento</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table></div>
+        <div id="cnt" class="muted" style="padding:12px 16px;font-size:.85rem;border-top:1px solid var(--line)"></div>
+      </section>`;
+    const draw = () => {
+      const q = document.getElementById('aNome').value.trim().toLowerCase(), tu = document.getElementById('aTurma').value;
+      const list = ALUNOS.filter(a => (!q || a.nome.toLowerCase().includes(q) || String(a.mat).includes(q)) && (!tu || a.turma === tu)).sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR'));
+      document.getElementById('rows').innerHTML = list.slice(0, 40).map(a => `<tr>
+        <td class="num muted">${a.mat}</td><td style="font-weight:700;text-transform:uppercase;font-size:.86rem">${a.nome}</td>
+        <td>${turmaDe(a.turma).etapa}</td><td class="num">${a.nasc}</td><td><span class="pill ok">Cursando</span></td>
+        <td class="r"><a class="btn" href="#boletim-${a.turma}-${a.id}" style="padding:6px 12px">Boletim</a></td></tr>`).join('') || '<tr><td colspan="6" class="c muted" style="padding:32px">Nenhum aluno encontrado.</td></tr>';
+      document.getElementById('cnt').textContent = `Mostrando ${Math.min(40, list.length)} de ${list.length} alunos`;
+    };
+    ['aNome', 'aTurma'].forEach(id => document.getElementById(id).addEventListener('input', draw));
+    draw();
+  },
+
+  disciplinas() {
+    view.innerHTML = `
+      <div class="page-title"><div><div class="crumb">Secretaria / Turmas</div><h1>Disciplinas</h1></div></div>
+      <section class="panel"><div class="table-wrap"><table class="t">
+        <thead><tr><th>Disciplina</th><th>Turmas</th><th>Professores</th></tr></thead>
+        <tbody>${DISC.map(d => { const profs = [...new Set(TURMAS.map(t => t.disciplinas.find(x => x.nome === d).prof).filter(Boolean))]; return `
+          <tr><td style="font-weight:700">${d}</td><td>1º ao 9º ano</td><td class="muted">${profs.join(', ')}</td></tr>`; }).join('')}</tbody>
+      </table></div></section>`;
+  },
+
+  diarios() {
+    const pend = pendentes();
+    view.innerHTML = `
+      <div class="page-title"><div><div class="crumb">Secretaria / Turmas</div><h1>Diários · 4º bimestre</h1></div>
+        <button class="btn blue" data-act="toast" data-msg="Lembrete registrado para os professores com diário pendente (demonstração)">Lembrar professores</button></div>
+      <section class="panel"><div class="table-wrap"><table class="t">
+        <thead><tr><th>Professor</th><th>Disciplina</th><th>Turma</th><th>Situação</th></tr></thead>
+        <tbody>${TURMAS.flatMap(t => t.disciplinas.filter(d => d.prof).map(d => `
+          <tr><td style="font-weight:700">${d.prof}</td><td>${d.nome}</td><td>${t.etapa}</td>
+          <td>${d.entregue ? '<span class="pill ok">Entregue</span>' : '<span class="pill warn">Pendente</span>'}</td></tr>`)).sort((a, b) => a.includes('Pendente') ? -1 : b.includes('Pendente') ? 1 : 0).join('')}</tbody>
+      </table></div></section>`;
+  },
+
+  relatorios() {
+    view.innerHTML = `
+      <div class="page-title"><div><h1>Central de relatórios</h1></div></div>
+      <section class="panel">
+        <div class="filters"><label class="field" for="rTurma">Turma<select id="rTurma">${TURMAS.map(t => `<option value="${t.id}">${t.nome}</option>`).join('')}</select></label></div>
+        <div style="padding:0 20px 16px" id="repList"></div>
+      </section>`;
+    const draw = () => document.getElementById('repList').innerHTML = relTable(document.getElementById('rTurma').value);
+    document.getElementById('rTurma').onchange = draw;
+    draw();
+  },
+
+  sair() { soon('Sair', 'Na versão final, este botão encerra a sessão e volta para a tela de login.'); }
+};
+
+function soon(titulo, texto) {
+  view.innerHTML = `
+    <div class="page-title"><div><h1>${titulo}</h1></div></div>
+    <section class="panel soon">
+      <span class="pill todo">Próxima etapa</span>
+      <h2 style="margin-top:12px">${titulo}</h2>
+      <p>${texto || 'Esta tela faz parte da próxima fase do projeto. Nesta demonstração estão prontas: Principal, Lista de turmas, Alunos, Disciplinas, Diários, Boletins e Central de relatórios.'}</p>
+    </section>`;
+}
+
+function turmaRow(t) {
+  const sv = semVinculo(t);
+  return `<tr>
+    <td class="full" data-l="">
+      <div class="turma-nome">${t.nome}</div>
+      <div class="turma-links">
+        <a href="#turma-${t.id}">${t.disciplinas.length} disciplinas</a>
+        <a href="#turma-${t.id}">${t.alunos.length} alunos | ${t.alunos.length} ativos</a>
+      </div>
+      <span class="criterio">${t.criterio}</span>
+    </td>
+    <td class="etapa" data-l="Etapa"><b>${t.etapa.toUpperCase()}</b><small>${t.nivel}</small></td>
+    <td data-l="Turno">${t.turno.toUpperCase()}</td>
+    <td data-l="Finalizada">${t.finalizada ? 'SIM' : 'NÃO'}${t.bloqueada ? ' <span class="pill warn">Bloqueada</span>' : ''}</td>
+    <td data-l="Disciplinas sem vínculo">${sv.length ? `<span class="pill bad">${sv.join(', ')}</span>` : '<span class="muted">–</span>'}</td>
+    <td class="cmd-cell"><div class="cmd">
+      <button data-act="edit" data-turma="${t.id}" title="Editar turma" aria-label="Editar ${t.nome}">${ic('edit')}</button>
+      <button data-act="reports" data-turma="${t.id}" title="Relatórios da turma" aria-label="Relatórios do ${t.nome}">${ic('search')}</button>
+      <button class="gold ${t.bloqueada ? '' : 'off'}" data-act="lock" data-turma="${t.id}" title="${t.bloqueada ? 'Desbloquear' : 'Bloquear'} lançamentos" aria-label="${t.bloqueada ? 'Desbloquear' : 'Bloquear'} lançamentos" aria-pressed="${t.bloqueada}">${ic(t.bloqueada ? 'lock' : 'unlock')}</button>
+      <button class="red" data-act="del" data-turma="${t.id}" title="Excluir turma" aria-label="Excluir ${t.nome}">${ic('trash')}</button>
+    </div></td>
+  </tr>`;
+}
+
+function viewTurma(id) {
+  const t = turmaDe(id);
+  if (!t) { location.hash = '#turmas'; return; }
+  view.innerHTML = `
+    <div class="page-title">
+      <div><div class="crumb"><a href="#turmas">Lista de turmas</a> / ${t.etapa}</div><h1>${t.nome}</h1><div class="muted" style="font-size:.9rem;margin-top:4px">${t.nivel} · ${t.turno} · ${t.alunos.length} alunos</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="reports" data-turma="${t.id}">${ic('search')} Relatórios</button><a class="btn blue" href="#boletim-${t.id}">Boletins da turma</a></div>
+    </div>
+    <div class="home">
+      <section class="panel">
+        <div class="panel-h">${ic('users')}<h2>Alunos</h2></div>
+        <div class="table-wrap"><table class="t">
+          <thead><tr><th>Nº</th><th>Aluno</th><th>Nascimento</th><th></th></tr></thead>
+          <tbody>${t.alunos.map((a, i) => `<tr>
+            <td class="num muted">${String(i + 1).padStart(2, '0')}</td>
+            <td style="font-weight:700;text-transform:uppercase;font-size:.86rem">${a.nome}<div class="muted" style="font-weight:400;text-transform:none;font-size:.78rem">Matrícula ${a.mat}</div></td>
+            <td class="num">${a.nasc}</td>
+            <td class="r"><a class="btn" style="padding:6px 12px" href="#boletim-${t.id}-${a.id}">Boletim</a></td></tr>`).join('')}</tbody>
+        </table></div>
+      </section>
+      <section class="panel">
+        <div class="panel-h">${ic('list')}<h2>Disciplinas</h2></div>
+        <div class="table-wrap"><table class="t">
+          <thead><tr><th>Disciplina</th><th>Professor</th><th>Diário</th></tr></thead>
+          <tbody>${t.disciplinas.map(d => `<tr><td style="font-weight:700">${d.nome}</td>
+            <td>${d.prof || '<span class="pill bad">Sem vínculo</span>'}</td>
+            <td>${!d.prof ? '–' : d.entregue ? '<span class="pill ok">Entregue</span>' : '<span class="pill warn">Pendente</span>'}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </section>
+    </div>`;
+}
+
+/* ---------- Boletim (mesmo layout do relatório atual, mais legível) ---------- */
+function boletimHTML(a, t) {
+  const tf = faltasAluno(a);
+  const bimHead = [1, 2, 3, 4].map((n, i) => `<th colspan="6" class="${i % 2 ? 'bim-alt' : ''}">${n}º BIM</th>`).join('');
+  const sub = [0, 1, 2, 3].map(i => ['AT', 'TBL', 'TESTE', 'PRO', 'RP'].map(s => `<th class="${i % 2 ? 'bim-alt' : ''}">${s}</th>`).join('') + `<th class="med">Média</th>`).join('');
+  const cell = (v, alt, cls = '') => `<td class="${alt ? 'bim-alt' : ''} ${cls} ${v != null && v < 6 && cls.includes('med') ? 'low' : ''}">${fmt(v)}</td>`;
+  return `
+  <article class="bol">
+    <div class="bol-title">Boletim 2026 · ${t.nivel} · ${t.etapa} · Turma: ${t.nome}</div>
+    <div class="bol-aluno"><span>Aluno: <b>${a.nome}</b></span><span>Data de nasc.: <b class="num">${a.nasc}</b></span></div>
+    <div class="table-wrap"><table class="b">
+      <thead>
+        <tr><th rowspan="2" class="dis">Disciplina</th>${bimHead}<th rowspan="2" class="med">Média<br>anual</th><th colspan="2">Rec. final</th><th rowspan="2">CC</th><th rowspan="2" class="med">Média<br>final</th><th rowspan="2">Total<br>faltas</th></tr>
+        <tr>${sub}<th>Nota</th><th>Falta</th></tr>
+      </thead>
+      <tbody>${DISC.map(d => {
+        const bs = a.notas[d], ma = mediaAnual(a, d);
+        const prof = t.disciplinas.find(x => x.nome === d).prof;
+        return `<tr>
+          <td class="dis"><b>${d}</b><small>${prof || 'sem professor'}</small></td>
+          ${bs.map((b, i) => cell(b.at, i % 2) + cell(b.tbl, i % 2) + cell(b.te, i % 2) + cell(b.pr, i % 2) + cell(b.rp, i % 2) + cell(b.media, i % 2, 'med')).join('')}
+          ${['', '', '', '', '', ''].map(() => '<td class="bim-alt"></td>').join('').replace(/<td class="bim-alt"><\/td>$/, '<td class="bim-alt med"></td>')}
+          <td class="med ${ma < 6 ? 'low' : ''}">${fmt(ma)}</td><td></td><td>0</td><td></td>
+          <td class="med fin ${ma < 6 ? 'low' : ''}">${fmt(ma)}</td><td>${a.faltas[d]}</td>
+        </tr>`; }).join('')}</tbody>
+    </table></div>
+    <div class="bol-foot">
+      <div class="sit">Situação atual: <b>CURSANDO</b><br>Data de impressão: 04/11/2026</div>
+      <div class="mid">Porcentagem de faltas em relação à carga horária: <b>${(tf / CARGA_TOTAL * 100).toFixed(1).replace('.', ',')}%</b> (máximo permitido: 25%)</div>
+      <div><b>Total de faltas: ${tf || '–'}</b></div>
+    </div>
+  </article>`;
+}
+
+function viewBoletim(arg) {
+  const [tid, aid] = (arg || '').split('-');
+  const t = turmaDe(tid) || TURMAS[1];
+  view.innerHTML = `
+    <div class="page-title"><div><div class="crumb"><a href="#turmas">Lista de turmas</a> / Boletins</div><h1>Boletim de notas por turma</h1></div></div>
+    <section class="panel"><div class="filters">
+      <label class="field" for="bTurma">Turma<select id="bTurma">${TURMAS.map(x => `<option value="${x.id}" ${x === t ? 'selected' : ''}>${x.nome}</option>`).join('')}</select></label>
+      <label class="field" for="bAluno">Aluno<select id="bAluno" style="max-width:300px"><option value="">Todos os alunos (${t.alunos.length})</option>${t.alunos.map(x => `<option value="${x.id}" ${x.id === aid ? 'selected' : ''}>${x.nome}</option>`).join('')}</select></label>
+      <label class="field" for="bStatus">Status<select id="bStatus"><option>Todos</option><option>Cursando</option></select></label>
+      <span class="muted" style="font-size:.84rem;padding-bottom:9px">Notas abaixo de 6,0 aparecem em vermelho.</span>
+    </div></section>
+    <div id="bols" style="display:flex;flex-direction:column;gap:22px"></div>`;
+  const draw = () => {
+    const sel = document.getElementById('bAluno').value;
+    const list = sel ? [alunoDe(sel)] : t.alunos;
+    document.getElementById('bols').innerHTML = list.map(a => boletimHTML(a, t)).join('');
+  };
+  document.getElementById('bTurma').onchange = e => location.hash = '#boletim-' + e.target.value;
+  document.getElementById('bAluno').onchange = draw;
+  draw();
+}
+
+/* ================= Relatórios da turma (janela) ================= */
+function relTable(tid) {
+  const list = [...RELATORIOS].sort((x, y) => favs.has(y.id) - favs.has(x.id));
+  return `<table class="rel"><thead><tr><th></th><th>Nome</th><th>Ação</th></tr></thead><tbody>${list.map(r => `
+    <tr>
+      <td><button class="star ${favs.has(r.id) ? 'on' : ''}" data-act="fav" data-rep="${r.id}" data-turma="${tid}" aria-pressed="${favs.has(r.id)}" aria-label="Favoritar ${r.nome}">${ic('star')}</button></td>
+      <td>${r.nome}</td>
+      <td><button class="lupa" data-act="gen" data-rep="${r.id}" data-turma="${tid}" aria-label="Visualizar ${r.nome}">${ic('search')}</button></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function openReports(tid) {
+  const t = turmaDe(tid);
+  layer.innerHTML = `
+    <div class="overlay" data-close>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mT">
+        <div class="modal-h"><div><h2 id="mT">Relatórios da turma</h2><p>${t.nome} · ${t.turno}</p></div><button class="x" data-close aria-label="Fechar">${ic('x')}</button></div>
+        <div class="modal-b" id="mBody">${relTable(tid)}</div>
+        <div class="modal-f"><button class="btn blue" data-close>Fechar</button></div>
+      </div>
+    </div>`;
+  layer.querySelector('.x').focus();
+}
+function confirmDelete(t) {
+  layer.innerHTML = `
+    <div class="overlay" data-close>
+      <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="dT" style="width:min(440px,100%)">
+        <div class="modal-h"><div><h2 id="dT">Excluir turma?</h2><p>${t.nome} tem ${t.alunos.length} alunos e notas lançadas. Nesta demonstração nada é apagado.</p></div></div>
+        <div class="modal-f"><button class="btn" data-close>Cancelar</button><button class="btn red" data-act="toast" data-msg="Turmas com notas lançadas não podem ser excluídas">Excluir</button></div>
+      </div>
+    </div>`;
+}
+function closeLayer() { layer.innerHTML = ''; }
+let tt;
+function toast(msg) {
+  clearTimeout(tt);
+  let el = document.querySelector('.toast');
+  if (!el) { el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.textContent = msg;
+  tt = setTimeout(() => el.remove(), 3000);
+}
+
+/* ================= Eventos ================= */
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-group]');
+  if (g) { const k = g.dataset.group; open.has(k) ? open.delete(k) : open.add(k); renderMenu(); return; }
+  const close = e.target.closest('[data-close]');
+  if (close && (close === e.target || close.tagName === 'BUTTON')) { closeLayer(); return; }
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act, t = turmaDe(el.dataset.turma);
+  if (act === 'reports') openReports(el.dataset.turma);
+  if (act === 'edit') location.hash = '#turma-' + t.id;
+  if (act === 'toast') { closeLayer(); toast(el.dataset.msg); }
+  if (act === 'lock') {
+    t.bloqueada = !t.bloqueada;
+    toast(t.bloqueada ? `Lançamentos do ${t.etapa} bloqueados` : `Lançamentos do ${t.etapa} liberados`);
+    el.closest('tr').outerHTML = turmaRow(t);
+  }
+  if (act === 'del') confirmDelete(t);
+  if (act === 'fav') {
+    const id = el.dataset.rep; favs.has(id) ? favs.delete(id) : favs.add(id); saveFavs();
+    ['mBody', 'repList'].forEach(x => { const n = document.getElementById(x); if (n) n.innerHTML = relTable(el.dataset.turma); });
+  }
+  if (act === 'gen') {
+    const r = RELATORIOS.find(x => x.id === el.dataset.rep);
+    closeLayer();
+    if (r.go) location.hash = r.go(el.dataset.turma);
+    else toast(`${r.nome}: geração em PDF entra na próxima etapa`);
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLayer(); document.body.classList.remove('nav-open'); } });
+
+document.getElementById('menuBtn').innerHTML = ic('menu') + '<span class="lbl-sm">Menu</span>';
+document.getElementById('menuBtn').onclick = () => document.body.classList.toggle('nav-open');
+document.getElementById('scrim').onclick = () => document.body.classList.remove('nav-open');
+document.getElementById('mailBtn').innerHTML = ic('mail') + '<span class="badge">2</span>';
+document.getElementById('mailBtn').onclick = () => toast('2 mensagens novas: conselho de classe e pré-matrícula');
+document.getElementById('bellBtn').innerHTML = ic('bell');
+document.getElementById('bellBtn').onclick = () => toast('Nenhum aviso novo');
+document.getElementById('helpBtn').innerHTML = ic('chat');
+document.getElementById('helpBtn').onclick = () => toast('O atendimento ao suporte entra na próxima etapa');
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Prints do sistema atual: têm nomes e notas de alunos reais. Não enviar para o GitHub.
+referencia*.jpeg
+referencia*.jpg
+referencia*.png
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
