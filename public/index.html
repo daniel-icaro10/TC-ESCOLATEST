@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Sistema de gestão escolar do Centro Educacional Futuro: turmas, alunos, diários e boletins.">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#f5f9fe">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <title>Portal Escolar Futuro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,17 +14,17 @@
 /* Layout: estrutura do sistema de referência (topo, menu lateral em acordeão, painéis), em versão minimalista e clara.
    Tema único claro por escolha do cliente. Verde-água só como acento. */
 :root {
-  --bg: #f7f9fa;
+  --bg: #f5f9fe;
   --surface: #ffffff;
-  --soft: #f3f6f7;
-  --ink: #2a3740;
-  --muted: #7b8a94;
-  --line: #e8edf0;
-  --teal: #2fb3a3;
-  --teal-dark: #1d8f82;
-  --teal-soft: #eaf7f5;
-  --blue: #3f7fc4;
-  --blue-soft: #eef4fb;
+  --soft: #f0f6fd;
+  --ink: #1e2f47;
+  --muted: #6d7f98;
+  --line: #e2ebf6;
+  --teal: #3d8fe6;
+  --teal-dark: #2672c7;
+  --teal-soft: #e7f1fd;
+  --blue: #3d8fe6;
+  --blue-soft: #edf5fe;
   --gold: #c99325;
   --gold-soft: #fcf5e6;
   --red: #c4475b;
@@ -34,7 +34,8 @@
   --on-color: #ffffff;
   --font: "Nunito Sans", "Segoe UI", Roboto, system-ui, sans-serif;
   --r: 12px;
-  --shadow: none;
+  --shadow: 0 1px 2px rgba(30,70,130,.04), 0 8px 24px rgba(30,70,130,.05);
+  --sky: #cfe3fb;
   color-scheme: light;
 }
 
@@ -97,7 +98,19 @@ h2 { font-size: 1.05rem; font-weight: 700; }
 .scrim { display: none; }
 
 /* ---------- Conteúdo ---------- */
-.view { padding-block: 28px 80px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 22px; max-width: 1240px; width: 100%; min-width: 0; }
+.view { padding-block: 32px 88px; padding-left: max(36px, env(safe-area-inset-left, 0px)); padding-right: max(36px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0; }
+/* formulários de cadastro */
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; padding: 6px 0 10px; }
+.form-grid .full { grid-column: 1 / -1; }
+.err { color: var(--red); font-size: .78rem; font-weight: 600; text-transform: none; letter-spacing: 0; }
+.field.invalid input, .field.invalid select { border-color: var(--red); }
+.checks { display: flex; flex-wrap: wrap; gap: 8px; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.checks label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 99px; padding: 6px 12px; font-size: .86rem; color: var(--ink); cursor: pointer; }
+.checks input { accent-color: var(--teal); margin: 0; }
+.checks label:has(input:checked) { background: var(--teal-soft); border-color: var(--sky, #cfe3fb); color: var(--teal-dark); }
+.form-note { grid-column: 1 / -1; font-size: .82rem; color: var(--muted); margin: 0; }
+.pill.new { background: var(--teal-soft); color: var(--teal-dark); }
+@media (max-width: 560px) { .form-grid { grid-template-columns: minmax(0, 1fr); } }
 .page-title { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
 .crumb { font-size: .82rem; color: var(--muted); margin-bottom: 4px; }
 .crumb a { color: var(--blue); text-decoration: none; }
@@ -226,6 +239,51 @@ table.b { border-collapse: collapse; width: 100%; font-size: .8rem; font-variant
 .soon { padding: 48px 24px; text-align: center; }
 .soon p { color: var(--muted); max-width: 46ch; margin: 8px auto 0; }
 
+/* ---------- Acabamento azul claro ---------- */
+body { background: linear-gradient(180deg, #e9f2fd 0, var(--bg) 360px) no-repeat, var(--bg); }
+.top { box-shadow: none; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(10px); }
+.side { background: var(--surface); border-right: 1px solid var(--line); }
+.user { margin: 16px 12px 8px; border: 0; border-radius: 14px; background: linear-gradient(135deg, var(--teal-soft), #f6faff); padding: 14px; }
+.user .av { background: var(--teal); color: #fff; }
+.menu { padding: 4px 12px 24px; }
+.mi > a, .mi > button { border-radius: 10px; padding: 10px 12px; margin: 1px 0; }
+.mi > a:hover, .mi > button:hover { background: var(--soft); }
+.lv0.open { background: transparent; }
+.lv0.open > button { background: var(--soft); color: var(--teal-dark); }
+.sub { margin-left: 22px !important; border-left: 2px solid var(--sky); }
+.mi > a.active { background: var(--teal-soft); color: var(--teal-dark) !important; }
+.sub .mi > a.active { box-shadow: inset 3px 0 0 var(--teal); border-radius: 0 10px 10px 0; }
+h1 { font-size: 1.6rem; letter-spacing: -.01em; }
+.crumb { font-weight: 600; }
+.panel { border-radius: 16px; box-shadow: var(--shadow); }
+.panel-h { padding: 16px 22px; }
+.panel-h svg { color: var(--teal); }
+.btn { border-radius: 10px; }
+.btn.blue { box-shadow: 0 4px 12px rgba(61,143,230,.25); }
+.aviso { background: linear-gradient(90deg, var(--teal-soft), #f4f9ff); border: 1px solid var(--sky); border-radius: 16px; }
+.aviso svg { color: var(--teal); }
+.t th { color: var(--muted); font-weight: 700; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+.t tbody tr:hover td { background: #f7fbff; }
+.turma-links a { color: var(--teal-dark); }
+.criterio { background: var(--teal-soft); color: var(--teal-dark); }
+.cmd button { border-radius: 10px; background: var(--soft); border-color: transparent; }
+.cmd button:not(.gold):not(.red):hover { background: var(--teal-soft); color: var(--teal-dark); border-color: transparent; }
+.cmd .gold.off { background: var(--soft); border-color: transparent; }
+.cmd .gold, .cmd .red:hover { border-color: transparent; }
+.steps li { padding: 15px 22px; }
+.bol { border-radius: 16px; }
+.bol-title { background: linear-gradient(90deg, var(--teal-soft), #f4f9ff); color: var(--teal-dark); }
+.b thead th { color: var(--muted); }
+.b .med { background: var(--teal-soft); }
+.b thead .med { background: #dcebfc; }
+.b .bim-alt { background: #fafcff; }
+.b td.dis { background: var(--surface); }
+.modal { border-radius: 18px; }
+.rel th { color: var(--muted); }
+.lupa:hover { background: var(--teal-soft); color: var(--teal-dark); border-color: var(--sky); }
+.help { color: var(--teal); border-color: var(--sky); }
+.field input:focus, .field select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+
 /* ---------- Responsivo ---------- */
 @media (max-width: 1100px) { .home { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 900px) {
@@ -264,9 +322,9 @@ table.b { border-collapse: collapse; width: 100%; font-size: .8rem; font-variant
   <button class="top-btn menu-toggle" id="menuBtn" aria-label="Abrir menu"></button>
   <a class="logo" href="#principal">
     <svg viewBox="0 0 42 42" aria-hidden="true">
-      <circle cx="21" cy="21" r="20" fill="#eaf7f5"/>
-      <circle cx="21" cy="21" r="13" fill="none" stroke="#2fb3a3" stroke-width="2"/>
-      <path d="M8 21h26M21 8c-5 4-5 22 0 26M21 8c5 4 5 22 0 26" fill="none" stroke="#2fb3a3" stroke-width="1.6"/>
+      <circle cx="21" cy="21" r="20" fill="#e7f1fd"/>
+      <circle cx="21" cy="21" r="13" fill="none" stroke="#3d8fe6" stroke-width="2"/>
+      <path d="M8 21h26M21 8c-5 4-5 22 0 26M21 8c5 4 5 22 0 26" fill="none" stroke="#3d8fe6" stroke-width="1.6"/>
     </svg>
     <div><b>Centro Educacional Futuro</b><small>Sistema de gestão escolar</small></div>
   </a>
@@ -323,7 +381,7 @@ const ICONS = {
 };
 const ic = (n, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
 /* ícone de "em andamento" com pontinhos, como no sistema de referência */
-const spinner = `<svg viewBox="0 0 28 28" aria-hidden="true">${[...Array(8)].map((_, i) => { const a = i / 8 * Math.PI * 2; return `<circle cx="${14 + Math.cos(a) * 10}" cy="${14 + Math.sin(a) * 10}" r="${1.4 + i * .25}" fill="var(--green)"/>`; }).join('')}</svg>`;
+const spinner = `<svg viewBox="0 0 28 28" aria-hidden="true">${[...Array(8)].map((_, i) => { const a = i / 8 * Math.PI * 2; return `<circle cx="${14 + Math.cos(a) * 10}" cy="${14 + Math.sin(a) * 10}" r="${1.4 + i * .25}" fill="var(--teal)"/>`; }).join('')}</svg>`;
 const doneIco = `<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--green)"/><path d="m8.5 14.5 3.5 3.5 7.5-8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const alertIco = `<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--blue)"/><path d="M14 7.5v8" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="14" cy="20" r="1.8" fill="#fff"/></svg>`;
 const todoIco = `<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="none" stroke="var(--line)" stroke-width="2.5"/></svg>`;
@@ -382,7 +440,62 @@ CONTAGEM.forEach((qtd, i) => {
   TURMAS.push(t);
 });
 const CARGA_TOTAL = 800;
-const mediaAnual = (a, d) => trunc1(a.notas[d].reduce((s, b) => s + b.media, 0) / a.notas[d].length);
+const mediaAnual = (a, d) => a.notas[d].length ? trunc1(a.notas[d].reduce((s, b) => s + b.media, 0) / a.notas[d].length) : null;
+
+/* ---------- Responsáveis e professores de exemplo ---------- */
+const tel = () => `(21) 9${Math.floor(1000 + R() * 8999)}-${Math.floor(1000 + R() * 8999)}`;
+const slug = n => n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(' ').filter(Boolean);
+const PAIS = ['Adriana','Carlos','Fabiana','Roberto','Luciana','Marcelo','Vanessa','André','Priscila','Fábio','Renata','Paulo','Camila','Sérgio','Tatiane','Daniela','Rogério','Aline'];
+const RESP = ALUNOS.map((a, i) => {
+  const nome = `${pick(PAIS)} ${a.nome.split(' ').slice(-1)[0]}`, s = slug(nome);
+  return { id: 'r' + i, nome, parentesco: pick(['Mãe', 'Pai', 'Mãe', 'Avó', 'Mãe']), tel: tel(), email: `${s[0]}.${s[s.length - 1]}@email.com`, aluno: a.id };
+});
+const PROFS = [];
+(() => {
+  const m = new Map();
+  TURMAS.forEach(t => t.disciplinas.forEach(d => {
+    if (!d.prof) return;
+    const p = m.get(d.prof) || { disc: new Set(), turmas: new Set() };
+    p.disc.add(d.nome); p.turmas.add(t.etapa); m.set(d.prof, p);
+  }));
+  m.forEach((v, nome) => { const s = slug(nome); PROFS.push({ id: 'p' + PROFS.length, nome, disc: [...v.disc], turmas: [...v.turmas], email: `${s[0]}.${s[s.length - 1]}@cefuturo.edu.br`, tel: tel() }); });
+})();
+
+/* ---------- Cadastros feitos na tela (ficam salvos neste navegador) ---------- */
+const STORE_KEY = 'cadastros-v1';
+let store = { turmas: [], alunos: [], resp: [], profs: [] };
+try { const s = localStorage.getItem(STORE_KEY); if (s) store = Object.assign(store, JSON.parse(s)); } catch (e) {}
+const persist = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} };
+const clean = v => String(v ?? '').trim().replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+const sortNome = (x, y) => x.nome.localeCompare(y.nome, 'pt-BR');
+
+function addTurma(d) {
+  const t = { id: d.id, ano: +d.ano, nome: d.nome, etapa: `${d.ano}º Ano`, nivel: 'Ensino Fundamental', turno: d.turno,
+    finalizada: false, bloqueada: false, criterio: d.criterio, nova: true,
+    disciplinas: DISC.map(n => ({ nome: n, prof: null, entregue: false })), alunos: [] };
+  TURMAS.push(t);
+  TURMAS.sort((x, y) => x.ano - y.ano || (x.nova ? 1 : 0) - (y.nova ? 1 : 0));
+  return t;
+}
+function addAluno(d) {
+  const t = turmaDe(d.turma);
+  if (!t) return null;
+  const a = { id: 'a' + d.mat, mat: d.mat, nome: d.nome, turma: t.id, nasc: d.nasc, novo: true,
+    notas: Object.fromEntries(DISC.map(x => [x, []])), faltas: Object.fromEntries(DISC.map(x => [x, 0])) };
+  ALUNOS.push(a); t.alunos.push(a); t.alunos.sort(sortNome);
+  return a;
+}
+function addProf(p) {
+  PROFS.push(p);
+  // vincula o professor às disciplinas que estavam sem professor
+  TURMAS.forEach(t => t.disciplinas.forEach(d => { if (!d.prof && p.disc.includes(d.nome)) { d.prof = p.nome; if (!p.turmas.includes(t.etapa)) p.turmas.push(t.etapa); } }));
+}
+store.turmas.forEach(addTurma);
+store.alunos.forEach(addAluno);
+store.resp.forEach(r => RESP.push(r));
+store.profs.forEach(p => addProf({ ...p, turmas: [...(p.turmas || [])] }));
+const proxMatricula = () => Math.max(...ALUNOS.map(a => a.mat)) + 1;
+const dataBR = iso => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
 const faltasAluno = a => DISC.reduce((s, d) => s + a.faltas[d], 0);
 const turmaDe = id => TURMAS.find(t => t.id === String(id));
 const alunoDe = id => ALUNOS.find(a => a.id === id);
@@ -518,7 +631,7 @@ const VIEWS = {
     view.innerHTML = `
       <div class="page-title">
         <div><div class="crumb">Secretaria / Turmas</div><h1>Lista de turmas</h1></div>
-        <button class="btn blue" data-act="toast" data-msg="Cadastro de turma entra na próxima etapa">+ Nova turma</button>
+        <button class="btn blue" data-act="nova-turma">+ Nova turma</button>
       </div>
       <section class="panel">
         <div class="panel-h">${ic('list')}<h2>2026</h2><span class="sp"></span>
@@ -540,7 +653,7 @@ const VIEWS = {
   alunos() {
     view.innerHTML = `
       <div class="page-title"><div><div class="crumb">Secretaria / Cadastro</div><h1>Alunos</h1></div>
-        <button class="btn blue" data-act="toast" data-msg="Cadastro de aluno entra na próxima etapa">+ Novo aluno</button></div>
+        <button class="btn blue" data-act="novo-aluno">+ Novo aluno</button></div>
       <section class="panel">
         <div class="filters">
           <label class="field" for="aNome" style="flex:1;max-width:360px">Nome ou matrícula<input id="aNome" type="search" autocomplete="off"></label>
@@ -557,7 +670,7 @@ const VIEWS = {
       const list = ALUNOS.filter(a => (!q || a.nome.toLowerCase().includes(q) || String(a.mat).includes(q)) && (!tu || a.turma === tu)).sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR'));
       document.getElementById('rows').innerHTML = list.slice(0, 40).map(a => `<tr>
         <td class="num muted">${a.mat}</td><td style="font-weight:700;text-transform:uppercase;font-size:.86rem">${a.nome}</td>
-        <td>${turmaDe(a.turma).etapa}</td><td class="num">${a.nasc}</td><td><span class="pill ok">Cursando</span></td>
+        <td>${turmaDe(a.turma).etapa}</td><td class="num">${a.nasc}</td><td>${a.novo ? '<span class="pill new">Matrícula nova</span>' : '<span class="pill ok">Cursando</span>'}</td>
         <td class="r"><a class="btn" href="#boletim-${a.turma}-${a.id}" style="padding:6px 12px">Boletim</a></td></tr>`).join('') || '<tr><td colspan="6" class="c muted" style="padding:32px">Nenhum aluno encontrado.</td></tr>';
       document.getElementById('cnt').textContent = `Mostrando ${Math.min(40, list.length)} de ${list.length} alunos`;
     };
@@ -600,8 +713,172 @@ const VIEWS = {
     draw();
   },
 
+  responsaveis() {
+    view.innerHTML = `
+      <div class="page-title"><div><div class="crumb">Secretaria / Cadastro</div><h1>Responsáveis</h1></div>
+        <button class="btn blue" data-act="novo-resp">+ Novo responsável</button></div>
+      <section class="panel">
+        <div class="filters"><label class="field" for="rNome" style="flex:1;max-width:360px">Nome do responsável ou do aluno<input id="rNome" type="search" autocomplete="off"></label></div>
+        <div class="table-wrap"><table class="t">
+          <thead><tr><th>Responsável</th><th>Parentesco</th><th>Aluno</th><th>Telefone</th><th>E-mail</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table></div>
+        <div id="cnt" class="muted" style="padding:12px 16px;font-size:.85rem;border-top:1px solid var(--line)"></div>
+      </section>`;
+    const draw = () => {
+      const q = document.getElementById('rNome').value.trim().toLowerCase();
+      const list = RESP.map(r => ({ ...r, al: alunoDe(r.aluno) })).filter(r => r.al && (!q || r.nome.toLowerCase().includes(q) || r.al.nome.toLowerCase().includes(q)))
+        .sort((x, y) => (y.id.startsWith('n') - x.id.startsWith('n')) || sortNome(x, y));
+      document.getElementById('rows').innerHTML = list.slice(0, 40).map(r => `<tr>
+        <td style="font-weight:700">${r.nome}${r.id.startsWith('n') ? ' <span class="pill new">Novo</span>' : ''}</td><td>${r.parentesco}</td>
+        <td>${r.al.nome}<div class="muted" style="font-size:.78rem">${turmaDe(r.al.turma).etapa}</div></td>
+        <td class="num">${r.tel}</td><td class="muted">${r.email || '–'}</td></tr>`).join('') || '<tr><td colspan="5" class="c muted" style="padding:32px">Nenhum responsável encontrado.</td></tr>';
+      document.getElementById('cnt').textContent = `Mostrando ${Math.min(40, list.length)} de ${list.length} responsáveis`;
+    };
+    document.getElementById('rNome').oninput = draw;
+    draw();
+  },
+
+  professores() {
+    view.innerHTML = `
+      <div class="page-title"><div><div class="crumb">Secretaria / Cadastro</div><h1>Professores</h1></div>
+        <button class="btn blue" data-act="novo-prof">+ Novo professor</button></div>
+      <section class="panel"><div class="table-wrap"><table class="t">
+        <thead><tr><th>Professor</th><th>Disciplinas</th><th>Turmas</th><th>Contato</th></tr></thead>
+        <tbody>${[...PROFS].sort(sortNome).map(p => `<tr>
+          <td style="font-weight:700">${p.nome}${p.novo ? ' <span class="pill new">Novo</span>' : ''}</td>
+          <td>${p.disc.join(', ')}</td>
+          <td class="muted">${p.turmas.length > 3 ? `${p.turmas.length} turmas` : p.turmas.join(', ') || '–'}</td>
+          <td><div>${p.email}</div><div class="muted num" style="font-size:.82rem">${p.tel}</div></td></tr>`).join('')}</tbody>
+      </table></div></section>`;
+  },
+
   sair() { soon('Sair', 'Na versão final, este botão encerra a sessão e volta para a tela de login.'); }
 };
+
+/* ================= Formulários de cadastro ================= */
+function fieldHTML(f) {
+  const id = 'f_' + f.name, req = f.required ? ' *' : '';
+  let ctl;
+  if (f.type === 'select') ctl = `<select id="${id}" name="${f.name}"><option value="">Selecione</option>${f.options.map(o => `<option value="${o.v}" ${o.v === f.value ? 'selected' : ''}>${o.t}</option>`).join('')}</select>`;
+  else if (f.type === 'checks') return `<div class="field full" role="group" aria-labelledby="${id}"><span id="${id}">${f.label}${req}</span><div class="checks">${f.options.map(o => `<label><input type="checkbox" name="${f.name}" value="${o}">${o}</label>`).join('')}</div><span class="err" data-err="${f.name}" hidden></span></div>`;
+  else ctl = `<input id="${id}" name="${f.name}" type="${f.type || 'text'}" ${f.placeholder ? `placeholder="${f.placeholder}"` : ''} ${f.max ? `max="${f.max}"` : ''} autocomplete="off">`;
+  return `<label class="field ${f.full ? 'full' : ''}" for="${id}">${f.label}${req}${ctl}<span class="err" data-err="${f.name}" hidden></span></label>`;
+}
+function openForm({ title, sub, fields, submit, note, onSave }) {
+  layer.innerHTML = `
+    <div class="overlay" data-close>
+      <form class="modal" id="cadForm" role="dialog" aria-modal="true" aria-labelledby="fT" novalidate style="width:min(680px,100%)">
+        <div class="modal-h"><div><h2 id="fT">${title}</h2><p>${sub}</p></div><button type="button" class="x" data-close aria-label="Fechar">${ic('x')}</button></div>
+        <div class="modal-b"><div class="form-grid">${fields.map(fieldHTML).join('')}${note ? `<p class="form-note">${note}</p>` : ''}</div></div>
+        <div class="modal-f"><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn blue">${submit}</button></div>
+      </form>
+    </div>`;
+  const form = document.getElementById('cadForm');
+  form.querySelector('input, select').focus();
+  form.onsubmit = e => {
+    e.preventDefault();
+    const data = {}; let ok = true;
+    fields.forEach(f => {
+      let v, msg = '';
+      if (f.type === 'checks') v = [...form.querySelectorAll(`[name="${f.name}"]:checked`)].map(x => x.value);
+      else v = form.elements[f.name].value.trim();
+      const empty = Array.isArray(v) ? !v.length : !v;
+      if (f.required && empty) msg = f.type === 'checks' ? 'Marque ao menos uma opção.' : 'Preencha este campo.';
+      else if (!empty && f.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) msg = 'Digite um e-mail válido, como nome@email.com.';
+      else if (!empty && f.type === 'tel' && v.replace(/\D/g, '').length < 10) msg = 'Digite o telefone com DDD, como (21) 99999-0000.';
+      else if (!empty && f.type === 'date' && v > '2026-11-04') msg = 'A data não pode ser no futuro.';
+      else if (!empty && f.minWords && v.split(/\s+/).length < f.minWords) msg = 'Digite o nome completo.';
+      const err = form.querySelector(`[data-err="${f.name}"]`);
+      err.hidden = !msg; err.textContent = msg; err.parentElement.classList.toggle('invalid', !!msg);
+      if (msg) ok = false;
+      data[f.name] = Array.isArray(v) ? v.map(clean) : clean(v);
+    });
+    if (!ok) { form.querySelector('.invalid input, .invalid select, .invalid [type=checkbox]')?.focus(); return; }
+    onSave(data);
+    closeLayer();
+    route();
+  };
+}
+const PARENTESCO = ['Mãe', 'Pai', 'Avó', 'Avô', 'Tia', 'Tio', 'Outro'].map(v => ({ v, t: v }));
+const optTurmas = () => TURMAS.map(t => ({ v: t.id, t: `${t.etapa} · ${t.turno}${t.nova ? ' (nova)' : ''}` }));
+
+function formAluno(turmaId) {
+  const mat = proxMatricula();
+  openForm({
+    title: 'Novo aluno', sub: `Matrícula ${mat} · ano letivo 2026`, submit: 'Matricular aluno',
+    fields: [
+      { name: 'nome', label: 'Nome completo do aluno', required: true, full: true, minWords: 2, placeholder: 'Ex.: Maria Eduarda Souza Lima' },
+      { name: 'nasc', label: 'Data de nascimento', type: 'date', required: true, max: '2026-11-04' },
+      { name: 'turma', label: 'Turma', type: 'select', required: true, options: optTurmas(), value: turmaId },
+      { name: 'resp', label: 'Nome do responsável', required: true, full: true, minWords: 2 },
+      { name: 'parentesco', label: 'Parentesco', type: 'select', required: true, options: PARENTESCO, value: 'Mãe' },
+      { name: 'tel', label: 'Telefone', type: 'tel', required: true, placeholder: '(21) 99999-0000' },
+      { name: 'email', label: 'E-mail do responsável', type: 'email', full: true, placeholder: 'nome@email.com' }
+    ],
+    note: 'O aluno entra na turma escolhida com o boletim em branco. O responsável é cadastrado junto.',
+    onSave: d => {
+      const rec = { mat, nome: d.nome, nasc: dataBR(d.nasc), turma: d.turma };
+      const resp = { id: 'n' + Date.now(), nome: d.resp, parentesco: d.parentesco, tel: d.tel, email: d.email, aluno: 'a' + mat };
+      store.alunos.push(rec); store.resp.push(resp); persist();
+      addAluno(rec); RESP.push(resp);
+      toast(`${d.nome} matriculado(a) no ${turmaDe(d.turma).etapa}. Matrícula ${mat}.`);
+    }
+  });
+}
+function formResp() {
+  openForm({
+    title: 'Novo responsável', sub: 'Vincule o responsável a um aluno já matriculado', submit: 'Salvar responsável',
+    fields: [
+      { name: 'nome', label: 'Nome completo', required: true, full: true, minWords: 2 },
+      { name: 'aluno', label: 'Aluno', type: 'select', required: true, full: true, options: [...ALUNOS].sort(sortNome).map(a => ({ v: a.id, t: `${a.nome} · ${turmaDe(a.turma).etapa}` })) },
+      { name: 'parentesco', label: 'Parentesco', type: 'select', required: true, options: PARENTESCO },
+      { name: 'tel', label: 'Telefone', type: 'tel', required: true, placeholder: '(21) 99999-0000' },
+      { name: 'email', label: 'E-mail', type: 'email', full: true, placeholder: 'nome@email.com' }
+    ],
+    onSave: d => {
+      const r = { id: 'n' + Date.now(), nome: d.nome, parentesco: d.parentesco, tel: d.tel, email: d.email, aluno: d.aluno };
+      store.resp.push(r); persist(); RESP.push(r);
+      toast(`Responsável ${d.nome} cadastrado(a).`);
+    }
+  });
+}
+function formProf() {
+  const semProf = [...new Set(TURMAS.flatMap(t => t.disciplinas.filter(d => !d.prof).map(d => d.nome)))];
+  openForm({
+    title: 'Novo professor', sub: 'Dados de contato e disciplinas que leciona', submit: 'Salvar professor',
+    fields: [
+      { name: 'nome', label: 'Nome completo', required: true, full: true, minWords: 2 },
+      { name: 'email', label: 'E-mail', type: 'email', required: true, placeholder: 'nome@cefuturo.edu.br' },
+      { name: 'tel', label: 'Telefone', type: 'tel', required: true, placeholder: '(21) 99999-0000' },
+      { name: 'disc', label: 'Disciplinas', type: 'checks', required: true, options: DISC }
+    ],
+    note: semProf.length ? `Disciplinas sem professor hoje: ${semProf.join(', ')}. Se marcar alguma delas, o professor é vinculado automaticamente.` : '',
+    onSave: d => {
+      const p = { id: 'n' + Date.now(), nome: d.nome, email: d.email, tel: d.tel, disc: d.disc, turmas: [], novo: true };
+      store.profs.push({ ...p }); persist(); addProf(p);
+      toast(`Professor(a) ${d.nome} cadastrado(a)${p.turmas.length ? ` e vinculado(a) ao ${p.turmas.join(', ')}` : ''}.`);
+    }
+  });
+}
+function formTurma() {
+  openForm({
+    title: 'Nova turma', sub: 'Ano letivo 2026 · Ensino Fundamental', submit: 'Criar turma',
+    fields: [
+      { name: 'ano', label: 'Ano / série', type: 'select', required: true, options: [...Array(9)].map((_, i) => ({ v: String(i + 1), t: `${i + 1}º Ano` })) },
+      { name: 'turno', label: 'Turno', type: 'select', required: true, options: ['Manhã', 'Tarde', 'Integral'].map(v => ({ v, t: v })) },
+      { name: 'nome', label: 'Nome da turma', full: true, placeholder: 'Ex.: 5º Ano B. Se ficar em branco, usamos "5º Ano de Escolaridade"' },
+      { name: 'criterio', label: 'Critério de avaliação', type: 'select', required: true, full: true, value: 'Critério Fundamental 2º ao 9º Ano',
+        options: ['Critério Fundamental 1º Ano demais matérias', 'Critério Fundamental 2º ao 9º Ano'].map(v => ({ v, t: v })) }
+    ],
+    note: 'A turma é criada com as 8 disciplinas do Fundamental. Os professores podem ser vinculados depois, em Cadastro → Professores.',
+    onSave: d => {
+      const rec = { id: 'n' + Date.now(), ano: d.ano, turno: d.turno, criterio: d.criterio, nome: d.nome || `${d.ano}º Ano de Escolaridade` };
+      store.turmas.push(rec); persist(); addTurma(rec);
+      toast(`Turma ${rec.nome} criada.`);
+    }
+  });
+}
 
 function soon(titulo, texto) {
   view.innerHTML = `
@@ -627,7 +904,7 @@ function turmaRow(t) {
     <td class="etapa" data-l="Etapa"><b>${t.etapa.toUpperCase()}</b><small>${t.nivel}</small></td>
     <td data-l="Turno">${t.turno.toUpperCase()}</td>
     <td data-l="Finalizada">${t.finalizada ? 'SIM' : 'NÃO'}${t.bloqueada ? ' <span class="pill warn">Bloqueada</span>' : ''}</td>
-    <td data-l="Disciplinas sem vínculo">${sv.length ? `<span class="pill bad">${sv.join(', ')}</span>` : '<span class="muted">–</span>'}</td>
+    <td data-l="Disciplinas sem vínculo">${sv.length ? `<span class="pill bad">${sv.length > 2 ? `${sv.length} disciplinas` : sv.join(', ')}</span>` : '<span class="muted">–</span>'}</td>
     <td class="cmd-cell"><div class="cmd">
       <button data-act="edit" data-turma="${t.id}" title="Editar turma" aria-label="Editar ${t.nome}">${ic('edit')}</button>
       <button data-act="reports" data-turma="${t.id}" title="Relatórios da turma" aria-label="Relatórios do ${t.nome}">${ic('search')}</button>
@@ -643,7 +920,7 @@ function viewTurma(id) {
   view.innerHTML = `
     <div class="page-title">
       <div><div class="crumb"><a href="#turmas">Lista de turmas</a> / ${t.etapa}</div><h1>${t.nome}</h1><div class="muted" style="font-size:.9rem;margin-top:4px">${t.nivel} · ${t.turno} · ${t.alunos.length} alunos</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="reports" data-turma="${t.id}">${ic('search')} Relatórios</button><a class="btn blue" href="#boletim-${t.id}">Boletins da turma</a></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="reports" data-turma="${t.id}">${ic('search')} Relatórios</button><button class="btn" data-act="novo-aluno" data-turma="${t.id}">+ Matricular aluno</button><a class="btn blue" href="#boletim-${t.id}">Boletins da turma</a></div>
     </div>
     <div class="home">
       <section class="panel">
@@ -689,10 +966,10 @@ function boletimHTML(a, t) {
         const prof = t.disciplinas.find(x => x.nome === d).prof;
         return `<tr>
           <td class="dis"><b>${d}</b><small>${prof || 'sem professor'}</small></td>
-          ${bs.map((b, i) => cell(b.at, i % 2) + cell(b.tbl, i % 2) + cell(b.te, i % 2) + cell(b.pr, i % 2) + cell(b.rp, i % 2) + cell(b.media, i % 2, 'med')).join('')}
+          ${[0, 1, 2].map(i => { const b = bs[i] || {}; return cell(b.at, i % 2) + cell(b.tbl, i % 2) + cell(b.te, i % 2) + cell(b.pr, i % 2) + cell(b.rp, i % 2) + cell(b.media, i % 2, 'med'); }).join('')}
           ${['', '', '', '', '', ''].map(() => '<td class="bim-alt"></td>').join('').replace(/<td class="bim-alt"><\/td>$/, '<td class="bim-alt med"></td>')}
-          <td class="med ${ma < 6 ? 'low' : ''}">${fmt(ma)}</td><td></td><td>0</td><td></td>
-          <td class="med fin ${ma < 6 ? 'low' : ''}">${fmt(ma)}</td><td>${a.faltas[d]}</td>
+          <td class="med ${ma != null && ma < 6 ? 'low' : ''}">${fmt(ma)}</td><td></td><td>0</td><td></td>
+          <td class="med fin ${ma != null && ma < 6 ? 'low' : ''}">${fmt(ma)}</td><td>${a.faltas[d]}</td>
         </tr>`; }).join('')}</tbody>
     </table></div>
     <div class="bol-foot">
@@ -778,6 +1055,10 @@ document.addEventListener('click', e => {
   if (act === 'reports') openReports(el.dataset.turma);
   if (act === 'edit') location.hash = '#turma-' + t.id;
   if (act === 'toast') { closeLayer(); toast(el.dataset.msg); }
+  if (act === 'novo-aluno') formAluno(el.dataset.turma);
+  if (act === 'novo-resp') formResp();
+  if (act === 'novo-prof') formProf();
+  if (act === 'nova-turma') formTurma();
   if (act === 'lock') {
     t.bloqueada = !t.bloqueada;
     toast(t.bloqueada ? `Lançamentos do ${t.etapa} bloqueados` : `Lançamentos do ${t.etapa} liberados`);
