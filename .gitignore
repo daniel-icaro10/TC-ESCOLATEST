@@ -10,3 +10,6 @@ Thumbs.db
 
 # Prints de referência de layout
 espa*amento.jpeg
+
+# Configuração local da ponte da catraca (tem a senha da catraca)
+ponte-catraca/config.json

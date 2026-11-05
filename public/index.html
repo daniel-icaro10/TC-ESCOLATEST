@@ -284,6 +284,39 @@ h1 { font-size: 1.6rem; letter-spacing: -.01em; }
 .help { color: var(--teal); border-color: var(--sky); }
 .field input:focus, .field select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
 
+/* ---------- Catraca (controle de acesso) ---------- */
+.cat-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 22px; padding: 4px 0 10px; align-items: start; }
+.cam { position: relative; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; background: #e9f1fb; border: 1px solid var(--line); display: grid; place-items: center; }
+.cam video, .cam img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cam video { transform: scaleX(-1); }
+.cam-guide { position: absolute; left: 50%; top: 48%; width: 42%; aspect-ratio: 3 / 4; transform: translate(-50%, -50%); border: 2px dashed rgba(255,255,255,.9); border-radius: 50%; box-shadow: 0 0 0 999px rgba(10,30,60,.2); pointer-events: none; }
+.cam-msg { position: relative; z-index: 1; max-width: 30ch; text-align: center; font-size: .88rem; color: var(--muted); padding: 16px; }
+.cam-msg svg { display: block; margin: 0 auto 8px; width: 36px; height: 36px; color: var(--teal); }
+.cam-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.inline { display: flex; gap: 8px; }
+.inline input { flex: 1; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.on { background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+.dot.off { background: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.res { border-radius: 10px; padding: 10px 14px; font-size: .86rem; margin: 0; }
+.res.ok { background: var(--green-soft); color: var(--green); }
+.res.bad { background: var(--red-soft); color: var(--red); }
+.res.info { background: var(--teal-soft); color: var(--teal-dark); }
+.res ul { margin: 4px 0 0; padding-left: 18px; }
+.liberar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 20px 22px; }
+.liberar button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px 12px; border-radius: 14px; border: 1px solid var(--sky); background: var(--teal-soft); color: var(--teal-dark); font-weight: 800; font-size: 1rem; }
+.liberar button svg { width: 28px; height: 28px; }
+.liberar button small { font-weight: 600; font-size: .78rem; color: var(--muted); }
+.liberar button:hover { background: #dcebfc; }
+.liberar button.main { background: var(--teal); border-color: var(--teal); color: #fff; }
+.liberar button.main small { color: rgba(255,255,255,.85); }
+.liberar button.main:hover { background: var(--teal-dark); }
+.liberar button:disabled { opacity: .6; cursor: wait; }
+.passos { margin: 0; padding: 4px 22px 20px 42px; font-size: .9rem; }
+.passos li { margin: 8px 0; }
+.passos code { background: var(--soft); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: .84rem; }
+@media (max-width: 720px) { .cat-grid { grid-template-columns: minmax(0, 1fr); } .liberar { grid-template-columns: minmax(0, 1fr); } }
+
 /* ---------- Responsivo ---------- */
 @media (max-width: 1100px) { .home { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 900px) {
@@ -377,7 +410,13 @@ const ICONS = {
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
   check:'<path d="m5 12 5 5 9-10"/>',
   chat:'<path d="M4 5h16v11H9l-5 4z"/>',
-  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  face:'<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="10" r="2.5"/><path d="M8 16.5c1-1.6 2.3-2.4 4-2.4s3 .8 4 2.4"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  in:'<path d="M10 4h9v16h-9M3 12h11M10 8l4 4-4 4"/>',
+  out:'<path d="M14 4H5v16h9M10 12h11M17 8l4 4-4 4"/>',
+  both:'<path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/>',
+  plug:'<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/>'
 };
 const ic = (n, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
 /* ícone de "em andamento" com pontinhos, como no sistema de referência */
@@ -530,6 +569,7 @@ const MENU = [
       { id:'simulados', label:'Simulados' }, { id:'historico', label:'Histórico escolar' }, { id:'horarios', label:'Horários' }] },
     { label:'Matrículas', icon:'idcard', children:[{ id:'matriculas', label:'Matrículas' }, { id:'rematriculas', label:'Rematrículas' }, { id:'pre-matricula', label:'Pré-matrícula' }] }
   ] },
+  { label:'Controle de acesso', icon:'face', children:[{ id:'catraca-cadastro', label:'Cadastro facial' }, { id:'catraca-acessos', label:'Liberação e acessos' }, { id:'catraca-config', label:'Conexão com a catraca' }] },
   { label:'Pedagógico', icon:'cap', children:[
     { label:'Professor', icon:'coffee', children:[{ id:'diarios', label:'Meus diários' }, { id:'planejamento', label:'Planejamento de aulas' }] },
     { label:'Coordenação', icon:'case', children:[{ id:'acompanhamento', label:'Acompanhamento pedagógico' }, { id:'ocorrencias', label:'Ocorrências' }] }
@@ -579,6 +619,7 @@ function route() {
   const h = decodeURIComponent(location.hash.slice(1)) || 'principal';
   document.body.classList.remove('nav-open');
   closeLayer();
+  clearInterval(pollAcessos);
   let active = h;
   if (h.startsWith('turma-')) { active = 'turmas'; viewTurma(h.slice(6)); }
   else if (h.startsWith('boletim')) { active = 'boletim'; viewBoletim(h.slice(8)); }
@@ -756,6 +797,336 @@ const VIEWS = {
   sair() { soon('Sair', 'Na versão final, este botão encerra a sessão e volta para a tela de login.'); }
 };
 
+/* ================= Controle de acesso: catraca Control iD =================
+   O navegador não fala direto com a catraca (ela só tem HTTP na rede local e não libera CORS).
+   Quem fala com ela é a "ponte da catraca" (pasta ponte-catraca), que roda num computador da escola. */
+const PONTE_KEY = 'ponte-catraca';
+let ponte = { url: location.port === '8787' ? location.origin : 'http://localhost:8787', token: '' };
+try { const s = localStorage.getItem(PONTE_KEY); if (s) ponte = Object.assign(ponte, JSON.parse(s)); } catch (e) {}
+const salvarPonte = () => { try { localStorage.setItem(PONTE_KEY, JSON.stringify(ponte)); } catch (e) {} };
+if (!store.catraca) store.catraca = {};
+let pollAcessos = null, camStream = null;
+
+async function ponteApi(caminho, { metodo = 'GET', corpo } = {}) {
+  let r;
+  try {
+    r = await fetch(ponte.url.replace(/\/+$/, '') + '/api/' + caminho, {
+      method: metodo,
+      headers: { 'Content-Type': 'application/json', ...(ponte.token ? { 'X-Token': ponte.token } : {}) },
+      body: corpo ? JSON.stringify(corpo) : undefined
+    });
+  } catch (e) { throw new Error('A ponte da catraca não respondeu. Confira se o programa "Ponte da catraca" está aberto no computador da recepção.'); }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.erro || `Erro ${r.status} na ponte da catraca.`);
+  return d;
+}
+const alunoPorMat = m => ALUNOS.find(a => String(a.mat) === String(m));
+const hora = ts => new Date(ts * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const statusPonte = (ok, texto) => `<div class="aviso" style="${ok ? '' : 'background:var(--red-soft);border-color:var(--red-soft)'}"><span class="dot ${ok ? 'on' : 'off'}"></span><div><b>${ok ? 'Catraca conectada' : 'Catraca sem conexão'}</b><span>${texto}</span></div>${ok ? '' : '<a class="btn" href="#catraca-config" style="margin-left:auto">Configurar</a>'}</div>`;
+const sim = (v, txt) => v ? `<span class="pill ok">${ic('check')}${txt || 'Sim'}</span>` : '<span class="muted">–</span>';
+
+Object.assign(VIEWS, {
+  'catraca-cadastro'() {
+    view.innerHTML = `
+      <div class="page-title"><div><div class="crumb">Controle de acesso</div><h1>Cadastro facial</h1></div>
+        <button class="btn blue" data-act="novo-aluno-facial">+ Novo aluno com facial</button></div>
+      <div id="ponteSt">${statusPonte(true, 'Verificando a conexão com a catraca…').replace('dot on', 'dot')}</div>
+      <section class="panel">
+        <div class="filters">
+          <label class="field" for="cNome" style="flex:1;max-width:360px">Nome ou matrícula<input id="cNome" type="search" autocomplete="off"></label>
+          <label class="field" for="cTurma">Turma<select id="cTurma"><option value="">Todas</option>${TURMAS.map(t => `<option value="${t.id}">${t.etapa}</option>`).join('')}</select></label>
+          <label class="field" for="cSit">Situação na catraca<select id="cSit"><option value="">Todos</option><option value="sem">Sem cadastro</option><option value="com">Cadastrados</option><option value="semface">Sem facial</option></select></label>
+        </div>
+        <div class="table-wrap"><table class="t">
+          <thead><tr><th>Matrícula</th><th>Aluno</th><th>Turma</th><th>Facial</th><th>Cartão</th><th>Senha</th><th></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table></div>
+        <div id="cnt" class="muted" style="padding:12px 16px;font-size:.85rem;border-top:1px solid var(--line)"></div>
+      </section>`;
+    const draw = () => {
+      if (!document.getElementById('rows')) return;
+      const q = document.getElementById('cNome').value.trim().toLowerCase(), tu = document.getElementById('cTurma').value, si = document.getElementById('cSit').value;
+      const list = ALUNOS.filter(a => {
+        const c = store.catraca[a.mat];
+        if (q && !a.nome.toLowerCase().includes(q) && !String(a.mat).includes(q)) return false;
+        if (tu && a.turma !== tu) return false;
+        if (si === 'sem' && c) return false;
+        if (si === 'com' && !c) return false;
+        if (si === 'semface' && c && c.facial) return false;
+        return true;
+      }).sort(sortNome);
+      document.getElementById('rows').innerHTML = list.slice(0, 60).map(a => {
+        const c = store.catraca[a.mat];
+        return `<tr>
+          <td class="num muted">${a.mat}</td><td style="font-weight:700;text-transform:uppercase;font-size:.86rem">${a.nome}</td>
+          <td>${turmaDe(a.turma).etapa}</td>
+          <td>${sim(c && c.facial)}</td><td class="num">${c && c.cartao ? clean(c.cartao) : '<span class="muted">–</span>'}</td><td>${sim(c && c.senha)}</td>
+          <td class="r"><button class="btn ${c ? '' : 'blue'}" style="padding:6px 12px" data-act="catraca-aluno" data-aluno="${a.id}">${c ? 'Editar' : 'Cadastrar'}</button></td></tr>`;
+      }).join('') || '<tr><td colspan="7" class="c muted" style="padding:32px">Nenhum aluno encontrado.</td></tr>';
+      const total = ALUNOS.filter(a => store.catraca[a.mat]).length;
+      document.getElementById('cnt').textContent = `Mostrando ${Math.min(60, list.length)} de ${list.length} alunos · ${total} cadastrados na catraca`;
+    };
+    ['cNome', 'cTurma', 'cSit'].forEach(id => document.getElementById(id).addEventListener('input', draw));
+    draw();
+    // a lista da catraca é a fonte da verdade; o que está salvo no navegador serve quando ela está fora do ar
+    ponteApi('alunos').then(lista => {
+      const novo = {};
+      lista.forEach(u => { if (alunoPorMat(u.matricula)) novo[u.matricula] = { facial: u.facial, cartao: u.cartao, senha: u.senha }; });
+      store.catraca = novo; persist();
+      const el = document.getElementById('ponteSt');
+      if (el) el.innerHTML = statusPonte(true, `${lista.length} pessoas cadastradas na catraca.`);
+      draw();
+    }).catch(e => { const el = document.getElementById('ponteSt'); if (el) el.innerHTML = statusPonte(false, `${clean(e.message)} A lista abaixo mostra o último estado conhecido.`); });
+  },
+
+  'catraca-acessos'() {
+    view.innerHTML = `
+      <div class="page-title"><div><div class="crumb">Controle de acesso</div><h1>Liberação e acessos</h1></div></div>
+      <section class="panel">
+        <div class="panel-h">${ic('unlock')}<h2>Liberar a catraca</h2><span class="sp"></span><span class="muted" style="font-size:.84rem">Libera um giro, para quem esqueceu o cartão ou a senha</span></div>
+        <div class="liberar">
+          <button class="main" data-act="liberar" data-sentido="entrada">${ic('in')}Liberar entrada<small>um aluno entra</small></button>
+          <button data-act="liberar" data-sentido="saida">${ic('out')}Liberar saída<small>um aluno sai</small></button>
+          <button data-act="liberar" data-sentido="ambos">${ic('both')}Liberar os dois lados<small>o primeiro giro passa</small></button>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="kpis" id="kpis"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-h">${ic('list')}<h2>Acessos de hoje</h2><span class="sp"></span><span class="muted" id="atual" style="font-size:.84rem"></span></div>
+        <div class="table-wrap"><table class="t">
+          <thead><tr><th>Hora</th><th>Aluno</th><th>Turma</th><th>Como passou</th><th>Resultado</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="5" class="c muted" style="padding:32px">Carregando…</td></tr></tbody>
+        </table></div>
+      </section>`;
+    const pill = ev => ev === 7 ? 'ok' : [10, 11, 12, 15].includes(ev) ? 'doing' : [6, 3, 2, 5].includes(ev) ? 'bad' : 'todo';
+    const carregar = () => ponteApi('acessos?limite=200').then(lista => {
+      if (!document.getElementById('kpis')) return;
+      document.getElementById('kpis').parentElement.hidden = false;
+      const liberados = lista.filter(l => l.evento === 7), negados = lista.filter(l => [3, 6].includes(l.evento));
+      const alunosHoje = new Set(liberados.map(l => l.matricula).filter(Boolean));
+      document.getElementById('kpis').innerHTML = `
+        <div class="kpi"><span>Passagens liberadas</span><b>${liberados.length}</b></div>
+        <div class="kpi"><span>Alunos que passaram</span><b>${alunosHoje.size}</b></div>
+        <div class="kpi"><span>Negados</span><b style="${negados.length ? 'color:var(--red)' : ''}">${negados.length}</b></div>
+        <div class="kpi"><span>Último acesso</span><b>${lista[0] ? hora(lista[0].hora).slice(0, 5) : '–'}</b></div>`;
+      document.getElementById('rows').innerHTML = lista.map(l => {
+        const a = alunoPorMat(l.matricula);
+        return `<tr><td class="num">${hora(l.hora)}</td>
+          <td style="font-weight:700;text-transform:uppercase;font-size:.86rem">${a ? a.nome : l.nome ? clean(l.nome) : '<span class="muted" style="text-transform:none;font-weight:400">Não identificado</span>'}</td>
+          <td>${a ? turmaDe(a.turma).etapa : '<span class="muted">–</span>'}</td>
+          <td>${l.meio || '<span class="muted">–</span>'}</td>
+          <td><span class="pill ${pill(l.evento)}">${clean(l.descricao)}</span></td></tr>`;
+      }).join('') || '<tr><td colspan="5" class="c muted" style="padding:32px">Nenhum acesso registrado hoje.</td></tr>';
+      document.getElementById('atual').textContent = `Atualizado às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · atualiza sozinho`;
+    }).catch(e => {
+      const rows = document.getElementById('rows');
+      if (rows) rows.innerHTML = `<tr><td colspan="5" style="padding:20px"><p class="res bad">${clean(e.message)} <a href="#catraca-config">Configurar conexão</a></p></td></tr>`;
+      const k = document.getElementById('kpis'); if (k) k.parentElement.hidden = true;
+    });
+    carregar();
+    pollAcessos = setInterval(carregar, 10000);
+  },
+
+  'catraca-config'() {
+    view.innerHTML = `
+      <div class="page-title"><div><div class="crumb">Controle de acesso</div><h1>Conexão com a catraca</h1></div></div>
+      <section class="panel">
+        <div class="panel-h">${ic('plug')}<h2>Ponte da catraca</h2></div>
+        <form id="pForm" class="filters" novalidate>
+          <label class="field" for="pUrl" style="flex:1;min-width:240px">Endereço da ponte<input id="pUrl" value="${clean(ponte.url)}" placeholder="http://localhost:8787"></label>
+          <label class="field" for="pTok" style="flex:1;min-width:180px">Token (se configurado)<input id="pTok" type="password" value="${clean(ponte.token)}" autocomplete="off"></label>
+          <button class="btn blue" type="submit">Salvar e testar</button>
+        </form>
+        <div id="pRes" style="padding:0 22px 20px" role="status"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-h">${ic('info')}<h2>Como instalar no computador da recepção</h2></div>
+        <ol class="passos">
+          <li>Instale o <b>Node.js</b> (versão 18 ou mais nova) no computador que fica na mesma rede da catraca.</li>
+          <li>Copie a pasta <code>ponte-catraca</code> do projeto para esse computador.</li>
+          <li>Copie <code>config.exemplo.json</code> para <code>config.json</code> e coloque o <b>IP da catraca</b>, o usuário e a senha de administrador dela.</li>
+          <li>Dê dois cliques em <code>iniciar.bat</code>. Deixe a janela aberta enquanto a catraca estiver em uso.</li>
+          <li>Abra o portal em <code>http://localhost:8787</code> nesse computador, ou use o endereço do portal na internet (ele precisa estar em <code>origensPermitidas</code> no <code>config.json</code>).</li>
+        </ol>
+      </section>`;
+    const testar = () => {
+      const res = document.getElementById('pRes');
+      res.innerHTML = '<p class="res info">Testando a conexão…</p>';
+      ponteApi('status').then(s => { res.innerHTML = `<p class="res ok"><b>Tudo certo.</b> A ponte falou com a catraca no IP ${clean(s.catraca)}.</p>`; })
+        .catch(e => { res.innerHTML = `<p class="res bad">${clean(e.message)}</p>`; });
+    };
+    document.getElementById('pForm').onsubmit = e => {
+      e.preventDefault();
+      ponte = { url: document.getElementById('pUrl').value.trim() || 'http://localhost:8787', token: document.getElementById('pTok').value.trim() };
+      salvarPonte(); testar();
+    };
+    testar();
+  }
+});
+
+async function liberarCatraca(sentido, btn) {
+  const bts = document.querySelectorAll('[data-act="liberar"]');
+  bts.forEach(b => b.disabled = true);
+  try {
+    await ponteApi('liberar', { metodo: 'POST', corpo: { sentido } });
+    toast(sentido === 'saida' ? 'Saída liberada: um giro.' : sentido === 'ambos' ? 'Catraca liberada nos dois sentidos: um giro.' : 'Entrada liberada: um giro.');
+  } catch (e) { toast(e.message); }
+  finally { bts.forEach(b => b.disabled = false); }
+}
+
+/* ---------- Câmera e foto ---------- */
+function pararCamera() { if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; } }
+/* reduz a foto para no máximo 900 px no lado maior, em JPEG: fica bem abaixo do limite de 1 MB da catraca */
+function fotoDe(origem, larg, alt, espelhar) {
+  const k = Math.min(1, 900 / Math.max(larg, alt));
+  const c = document.createElement('canvas');
+  c.width = Math.round(larg * k); c.height = Math.round(alt * k);
+  const g = c.getContext('2d');
+  if (espelhar) { g.translate(c.width, 0); g.scale(-1, 1); }
+  g.drawImage(origem, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', .88);
+}
+
+function openCatraca(a) {
+  if (!a) return;
+  const t = turmaDe(a.turma), info = store.catraca[a.mat] || null;
+  let foto = null, facialFeita = false, cartaoInicial = info && info.cartao || '';
+  layer.innerHTML = `
+    <div class="overlay" data-close>
+      <form class="modal" id="catForm" role="dialog" aria-modal="true" aria-labelledby="cT" novalidate style="width:min(800px,100%)">
+        <div class="modal-h"><div><h2 id="cT">Cadastro na catraca</h2><p>${a.nome} · Matrícula ${a.mat} · ${t.etapa}</p></div><button type="button" class="x" data-close aria-label="Fechar">${ic('x')}</button></div>
+        <div class="modal-b"><div class="cat-grid">
+          <section aria-label="Foto do rosto">
+            <div class="cam">
+              <video id="camV" autoplay playsinline muted hidden></video>
+              <img id="camI" alt="Foto do rosto capturada" hidden>
+              <div class="cam-guide" id="camG" hidden></div>
+              <div class="cam-msg" id="camMsg">${ic('camera')}${info && info.facial ? 'Este aluno já tem rosto cadastrado. Tire uma nova foto só se quiser trocar.' : 'Ligue a câmera e tire uma foto do rosto do aluno.'}</div>
+            </div>
+            <div class="cam-btns">
+              <button type="button" class="btn blue" data-cam="ligar">${ic('camera')} Ligar câmera</button>
+              <button type="button" class="btn blue" data-cam="foto" hidden>Tirar foto</button>
+              <button type="button" class="btn" data-cam="outra" hidden>Tirar outra</button>
+              <label class="btn" for="camF" style="cursor:pointer">Enviar arquivo</label>
+              <input type="file" id="camF" accept="image/jpeg,image/png" hidden>
+              <button type="button" class="btn" data-cam="remoto" title="O aluno olha para a câmera da própria catraca">Capturar na catraca</button>
+            </div>
+            <p class="form-note" style="margin-top:10px">Rosto de frente, dentro do oval, com boa luz. Sem boné, máscara ou óculos escuros.</p>
+          </section>
+          <div class="form-grid" style="grid-template-columns:minmax(0,1fr);padding-top:0">
+            <label class="field" for="cSenha">Senha numérica
+              <input id="cSenha" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="${info && info.senha ? 'Já tem senha. Em branco mantém a atual' : '4 a 8 números'}">
+              <span class="err" id="eSenha" hidden></span></label>
+            <label class="field" for="cCartao">Cartão de aproximação
+              <span class="inline"><input id="cCartao" inputmode="numeric" value="${clean(cartaoInicial)}" placeholder="Ex.: 123,45678 ou 0012345678"><button type="button" class="btn" data-cam="cartao" title="O aluno aproxima o cartão do leitor da catraca">Ler na catraca</button></span>
+              <span class="err" id="eCartao" hidden></span></label>
+            <p class="form-note">O aluno passa pela catraca pelo rosto, aproximando o cartão ou digitando a senha. Cadastre só o que ele for usar. O número do cartão vem impresso nele; se tiver vírgula, digite com a vírgula.</p>
+            <div id="catRes" role="status"></div>
+          </div>
+        </div></div>
+        <div class="modal-f">
+          ${info ? '<button type="button" class="btn red" data-cam="remover" style="margin-right:auto">Remover da catraca</button>' : ''}
+          <button type="button" class="btn" data-close>Cancelar</button>
+          <button type="submit" class="btn blue" id="catSalvar">Salvar na catraca</button>
+        </div>
+      </form>
+    </div>`;
+  const form = document.getElementById('catForm'), $ = id => document.getElementById(id);
+  const vid = $('camV'), img = $('camI'), msg = $('camMsg'), res = $('catRes');
+  const mostra = (q, sim) => form.querySelector(`[data-cam="${q}"]`).hidden = !sim;
+  const resultado = (tipo, html) => res.innerHTML = html ? `<p class="res ${tipo}">${html}</p>` : '';
+  const ocupado = sim => form.querySelectorAll('button, input').forEach(b => { if (!b.matches('[data-close]')) b.disabled = sim; });
+  const exibeFoto = url => {
+    foto = url; pararCamera();
+    img.src = url; img.hidden = false; vid.hidden = true; $('camG').hidden = true; msg.hidden = true;
+    mostra('ligar', false); mostra('foto', false); mostra('outra', true);
+  };
+  const lembrar = parcial => { store.catraca[a.mat] = { ...(store.catraca[a.mat] || { facial: false, cartao: null, senha: false }), ...parcial }; persist(); };
+
+  async function ligar() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { resultado('bad', 'Este navegador não permite usar a câmera. Use "Enviar arquivo".'); return; }
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+      if (!document.body.contains(vid)) { pararCamera(); return; }
+      vid.srcObject = camStream; vid.hidden = false; img.hidden = true; $('camG').hidden = false; msg.hidden = true;
+      mostra('ligar', false); mostra('foto', true); mostra('outra', false); foto = null; resultado();
+    } catch (e) {
+      resultado('bad', e.name === 'NotAllowedError' ? 'O navegador bloqueou a câmera. Clique no cadeado ao lado do endereço e permita a câmera.' : 'Nenhuma câmera encontrada. Use "Enviar arquivo" ou "Capturar na catraca".');
+    }
+  }
+  form.addEventListener('click', async e => {
+    const b = e.target.closest('[data-cam]');
+    if (!b) return;
+    const q = b.dataset.cam;
+    if (q === 'ligar' || q === 'outra') ligar();
+    if (q === 'foto') {
+      if (!vid.videoWidth) { resultado('info', 'A câmera ainda está abrindo. Tente de novo em um segundo.'); return; }
+      exibeFoto(fotoDe(vid, vid.videoWidth, vid.videoHeight, true));
+    }
+    if (q === 'remoto' || q === 'cartao') {
+      ocupado(true);
+      resultado('info', q === 'remoto' ? 'Peça para o aluno olhar para a câmera da catraca…' : 'Peça para o aluno aproximar o cartão do leitor da catraca…');
+      try {
+        const r = await ponteApi(`alunos/${a.mat}/${q === 'remoto' ? 'facial' : 'cartao'}-na-catraca`, { metodo: 'POST', corpo: { nome: a.nome } });
+        if (q === 'remoto') { facialFeita = true; lembrar({ facial: true }); resultado('ok', 'Rosto cadastrado pela catraca.'); }
+        else { $('cCartao').value = cartaoInicial = r.cartao || ''; lembrar({ cartao: r.cartao || null }); resultado('ok', `Cartão ${clean(r.cartao || '')} cadastrado.`); }
+      } catch (err) { resultado('bad', clean(err.message)); }
+      ocupado(false);
+    }
+    if (q === 'remover') {
+      if (!confirm(`Remover ${a.nome} da catraca? Ele deixa de passar pelo rosto, cartão e senha.`)) return;
+      ocupado(true);
+      try {
+        await ponteApi(`alunos/${a.mat}`, { metodo: 'DELETE' });
+        delete store.catraca[a.mat]; persist();
+        closeLayer(); route(); toast(`${a.nome} removido(a) da catraca.`);
+      } catch (err) { resultado('bad', clean(err.message)); ocupado(false); }
+    }
+  });
+  $('camF').onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const im = new Image();
+    im.onload = () => { exibeFoto(fotoDe(im, im.naturalWidth, im.naturalHeight, false)); URL.revokeObjectURL(im.src); };
+    im.onerror = () => resultado('bad', 'Não consegui abrir esta imagem. Use JPG ou PNG.');
+    im.src = URL.createObjectURL(f);
+    e.target.value = '';
+  };
+
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const senha = $('cSenha').value.trim(), cartao = $('cCartao').value.trim();
+    const erroS = senha && !/^\d{4,8}$/.test(senha) ? 'A senha precisa ter de 4 a 8 números.' : '';
+    const erroC = cartao && !/^(\d{1,15}|\d{1,3}[,.]\d{1,10})$/.test(cartao.replace(/\s/g, '')) ? 'Use só números, ou área,código (ex.: 123,45678).' : '';
+    [['eSenha', erroS], ['eCartao', erroC]].forEach(([id, m]) => { $(id).hidden = !m; $(id).textContent = m; $(id).parentElement.classList.toggle('invalid', !!m); });
+    if (erroS || erroC) return;
+    if (!foto && !senha && cartao === cartaoInicial && !info && !facialFeita) { resultado('bad', 'Tire a foto do rosto, cadastre um cartão ou uma senha.'); return; }
+    const corpo = { nome: a.nome };
+    if (senha) corpo.senha = senha;
+    if (cartao !== cartaoInicial) corpo.cartao = cartao;
+    if (foto) corpo.foto = foto;
+    ocupado(true); resultado('info', 'Enviando para a catraca…');
+    try {
+      const r = await ponteApi(`alunos/${a.mat}`, { metodo: 'PUT', corpo });
+      const p = {};
+      if (r.senha !== undefined) p.senha = r.senha;
+      if (r.cartao !== undefined) { p.cartao = r.cartao; cartaoInicial = cartao; }
+      if (r.foto && r.foto.ok) p.facial = true;
+      lembrar(p);
+      const avisos = (r.avisos || []).map(clean);
+      if (r.foto && !r.foto.ok) {
+        resultado('bad', `<b>A catraca recusou a foto.</b><ul>${r.foto.erros.map(x => `<li>${clean(x)}</li>`).join('')}</ul>${corpo.senha || corpo.cartao !== undefined ? 'Senha e cartão foram salvos.' : ''}`);
+        $('cSenha').value = ''; ocupado(false); return;
+      }
+      closeLayer(); route();
+      toast(`${a.nome} cadastrado(a) na catraca.${avisos.length ? ' ' + avisos[0] : ''}`);
+    } catch (err) { resultado('bad', clean(err.message)); ocupado(false); }
+  };
+  if (!info || !info.facial) ligar();
+}
+
 /* ================= Formulários de cadastro ================= */
 function fieldHTML(f) {
   const id = 'f_' + f.name, req = f.required ? ' *' : '';
@@ -803,7 +1174,7 @@ function openForm({ title, sub, fields, submit, note, onSave }) {
 const PARENTESCO = ['Mãe', 'Pai', 'Avó', 'Avô', 'Tia', 'Tio', 'Outro'].map(v => ({ v, t: v }));
 const optTurmas = () => TURMAS.map(t => ({ v: t.id, t: `${t.etapa} · ${t.turno}${t.nova ? ' (nova)' : ''}` }));
 
-function formAluno(turmaId) {
+function formAluno(turmaId, depois) {
   const mat = proxMatricula();
   openForm({
     title: 'Novo aluno', sub: `Matrícula ${mat} · ano letivo 2026`, submit: 'Matricular aluno',
@@ -823,6 +1194,7 @@ function formAluno(turmaId) {
       store.alunos.push(rec); store.resp.push(resp); persist();
       addAluno(rec); RESP.push(resp);
       toast(`${d.nome} matriculado(a) no ${turmaDe(d.turma).etapa}. Matrícula ${mat}.`);
+      if (depois) setTimeout(() => depois(alunoDe('a' + mat)));
     }
   });
 }
@@ -1033,7 +1405,7 @@ function confirmDelete(t) {
       </div>
     </div>`;
 }
-function closeLayer() { layer.innerHTML = ''; }
+function closeLayer() { pararCamera(); layer.innerHTML = ''; }
 let tt;
 function toast(msg) {
   clearTimeout(tt);
@@ -1056,6 +1428,9 @@ document.addEventListener('click', e => {
   if (act === 'edit') location.hash = '#turma-' + t.id;
   if (act === 'toast') { closeLayer(); toast(el.dataset.msg); }
   if (act === 'novo-aluno') formAluno(el.dataset.turma);
+  if (act === 'novo-aluno-facial') formAluno('', openCatraca);
+  if (act === 'catraca-aluno') openCatraca(alunoDe(el.dataset.aluno));
+  if (act === 'liberar') liberarCatraca(el.dataset.sentido, el);
   if (act === 'novo-resp') formResp();
   if (act === 'novo-prof') formProf();
   if (act === 'nova-turma') formTurma();
