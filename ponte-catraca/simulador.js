@@ -32,14 +32,18 @@ function confere(obj, where, nome) {
   return Object.entries(f).every(([k, x]) => (x && typeof x === 'object') ? Object.entries(x).every(([op, y]) => ({ '!=': obj[k] != y, '>': obj[k] > y, '>=': obj[k] >= y, '<': obj[k] < y, '<=': obj[k] <= y }[op])) : String(obj[k]) === String(x));
 }
 
+const LIMITE = 3000;   // a demonstração online é pública: limita a memória usada
 function registrar(evento, extra = {}) {
+  if (db.access_logs.length >= LIMITE) db.access_logs.splice(0, 500);
   db.access_logs.push({ id: seq.access_logs++, time: agora(), event: evento, device_id: 1, user_id: 0, portal_id: 1, card_value: 0, confidence: 0, pin_value: '', ...extra });
 }
 
 const rotas = {
   'login.fcgi': b => {
     if (b.login !== 'admin' || b.password !== 'admin') return [401, { error: 'Invalid login' }];
-    const s = crypto.randomBytes(12).toString('base64url'); sessoes.add(s); return [200, { session: s }];
+    const s = crypto.randomBytes(12).toString('base64url');
+    if (sessoes.size > 100) sessoes.clear();
+    sessoes.add(s); return [200, { session: s }];
   },
   'session_is_valid.fcgi': () => [200, { session_is_valid: true }],
   'load_objects.fcgi': b => {
@@ -49,6 +53,7 @@ const rotas = {
   },
   'create_objects.fcgi': b => {
     if (!db[b.object]) return [400, { error: 'Unknown object' }];
+    if (db[b.object].length + b.values.length > LIMITE) return [400, { error: 'Simulador cheio: reinicie para limpar' }];
     if (b.object === 'cards' && b.values.some(v => db.cards.some(c => c.value === v.value))) return [400, { error: 'UNIQUE constraint failed: cards.value' }];
     const ids = b.values.map(v => { const o = { id: seq[b.object]++, password: '', salt: '', image_timestamp: 0, ...v }; db[b.object].push(o); return o.id; });
     return [200, { ids }];

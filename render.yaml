@@ -23,3 +23,16 @@ services:
       - path: /index.html
         name: Cache-Control
         value: no-cache
+
+  # Demonstração da catraca Control iD com catraca SIMULADA (não fala com equipamento real).
+  # Sobe o portal + a ponte + o simulador num só processo. O cliente testa pelo navegador.
+  - type: web
+    name: portal-escolar-demo-catraca
+    runtime: node
+    plan: free
+    buildCommand: echo "Sem dependências para instalar"
+    startCommand: node ponte-catraca/demo-online.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"

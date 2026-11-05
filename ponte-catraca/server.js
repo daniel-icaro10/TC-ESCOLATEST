@@ -32,7 +32,8 @@ const PADRAO = {
   secBoxId: 65793,                  // usado só quando acaoLiberar = "sec_box"
   porta_rele: 1,                    // usado só quando acaoLiberar = "door"
   grupoId: 1,                       // grupo da catraca em que os alunos entram (regra de acesso)
-  servirPortal: true                // abre o portal em http://localhost:8787
+  servirPortal: true,               // abre o portal em http://localhost:8787
+  modoDemo: false                   // só para a demonstração online com a catraca SIMULADA: aceita acesso pela internet
 };
 // PONTE_CONFIG permite usar outro arquivo (o demo.bat usa config.demo.json, que aponta para o simulador)
 const ARQ_CONFIG = path.resolve(__dirname, process.env.PONTE_CONFIG || 'config.json');
@@ -44,6 +45,10 @@ try {
   if (e.code !== 'ENOENT') { console.error('config.json inválido:', e.message); process.exit(1); }
   console.warn('Sem config.json: usando valores padrão. Copie config.exemplo.json para config.json e ajuste o IP da catraca.');
 }
+if (process.env.PORT) cfg.porta = Number(process.env.PORT);   // o Render define a porta por variável de ambiente
+// Endereços pelos quais a ponte local pode ser chamada. Bloqueia "DNS rebinding": um site malicioso
+// que aponta o próprio domínio para 127.0.0.1 para tentar liberar a catraca pelo navegador da recepção.
+const HOSTS_LOCAIS = new Set(['localhost', '127.0.0.1', '[::1]'].map(h => `${h}:${cfg.porta}`));
 const BASE = `http://${cfg.catraca.ip}`;
 const PASTA_PORTAL = path.join(__dirname, '..', 'public');
 
@@ -279,9 +284,15 @@ async function acessos(desde, limite) {
 }
 
 /* ---------------- Servidor HTTP ---------------- */
+/* Na demonstração online o portal e a ponte estão no mesmo endereço; fora dela vale só a lista do config. */
+function origemPermitida(req, origem) {
+  if (cfg.origensPermitidas.includes(origem)) return true;
+  if (!cfg.modoDemo) return false;
+  try { return new URL(origem).host === req.headers.host; } catch (e) { return false; }
+}
 function cabecalhosCors(req) {
   const origem = req.headers.origin;
-  if (!origem || !cfg.origensPermitidas.includes(origem)) return {};
+  if (!origem || !origemPermitida(req, origem)) return {};
   return {
     'Access-Control-Allow-Origin': origem,
     'Vary': 'Origin',
@@ -311,7 +322,10 @@ function servirArquivo(req, res, caminhoUrl) {
   if (!arq.startsWith(PASTA_PORTAL + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(arq, (e, dados) => {
     if (e) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Não encontrado'); }
-    res.writeHead(200, { 'Content-Type': TIPOS[path.extname(arq)] || 'application/octet-stream', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
+    // avisa o portal que a ponte está no mesmo endereço (e se é a demonstração com catraca simulada)
+    if (rel === 'index.html') dados = Buffer.from(String(dados).replace('</head>', `<script>window.PONTE_NA_ORIGEM=true;window.PONTE_DEMO=${!!cfg.modoDemo};</script></head>`));
+    res.writeHead(200, { 'Content-Type': TIPOS[path.extname(arq)] || 'application/octet-stream', 'Cache-Control': 'no-cache',
+      'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin' });
     res.end(dados);
   });
 }
@@ -327,9 +341,11 @@ const servidor = http.createServer(async (req, res) => {
     res.writeHead(404); return res.end();
   }
 
+  if (!cfg.modoDemo && !HOSTS_LOCAIS.has(String(req.headers.host).toLowerCase()) && cfg.host === '127.0.0.1')
+    return responder(req, res, 403, { erro: 'Acesse a ponte por http://localhost:' + cfg.porta + '.' });
   // pedidos vindos de outro site que não está na lista são recusados
   const origem = req.headers.origin;
-  if (origem && !cfg.origensPermitidas.includes(origem)) return responder(req, res, 403, { erro: `Origem ${origem} não autorizada. Inclua em origensPermitidas no config.json.` });
+  if (origem && !origemPermitida(req, origem)) return responder(req, res, 403, { erro: `Origem ${origem} não autorizada. Inclua em origensPermitidas no config.json.` });
   if (cfg.token && req.headers['x-token'] !== cfg.token) return responder(req, res, 401, { erro: 'Token da ponte incorreto.' });
 
   try {
@@ -339,7 +355,7 @@ const servidor = http.createServer(async (req, res) => {
       // reaproveita a sessão aberta; só faz login de novo se a catraca disser que ela venceu
       let v = await api('session_is_valid.fcgi');
       if (v.session_is_valid === false) { await login(); v = await api('session_is_valid.fcgi'); }
-      dados = { ok: true, catraca: cfg.catraca.ip, sessao: v.session_is_valid !== false, acao: cfg.acaoLiberar };
+      dados = { ok: true, catraca: cfg.modoDemo ? 'simulada' : cfg.catraca.ip, sessao: v.session_is_valid !== false, acao: cfg.acaoLiberar, demo: !!cfg.modoDemo };
     } else if (req.method === 'GET' && rota === '/api/alunos') {
       dados = await listarAlunos();
     } else if (m && req.method === 'PUT' && !m[2]) {

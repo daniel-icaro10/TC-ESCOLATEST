@@ -803,6 +803,9 @@ const VIEWS = {
 const PONTE_KEY = 'ponte-catraca';
 let ponte = { url: location.port === '8787' ? location.origin : 'http://localhost:8787', token: '' };
 try { const s = localStorage.getItem(PONTE_KEY); if (s) ponte = Object.assign(ponte, JSON.parse(s)); } catch (e) {}
+// quando o portal é aberto pela própria ponte (localhost:8787 ou a demonstração online), usa esse mesmo endereço
+if (window.PONTE_NA_ORIGEM) ponte.url = location.origin;
+const avisoDemo = () => window.PONTE_DEMO ? `<div class="aviso">${ic('info')}<div><b>Demonstração com catraca simulada</b><span>Tudo funciona como na catraca de verdade: cadastro com foto, cartão e senha, liberação e lista de acessos. Os dados de teste são apagados quando o servidor reinicia.</span></div></div>` : '';
 const salvarPonte = () => { try { localStorage.setItem(PONTE_KEY, JSON.stringify(ponte)); } catch (e) {} };
 if (!store.catraca) store.catraca = {};
 let pollAcessos = null, camStream = null;
@@ -830,6 +833,7 @@ Object.assign(VIEWS, {
     view.innerHTML = `
       <div class="page-title"><div><div class="crumb">Controle de acesso</div><h1>Cadastro facial</h1></div>
         <button class="btn blue" data-act="novo-aluno-facial">+ Novo aluno com facial</button></div>
+      ${avisoDemo()}
       <div id="ponteSt">${statusPonte(true, 'Verificando a conexão com a catraca…').replace('dot on', 'dot')}</div>
       <section class="panel">
         <div class="filters">
@@ -882,6 +886,7 @@ Object.assign(VIEWS, {
   'catraca-acessos'() {
     view.innerHTML = `
       <div class="page-title"><div><div class="crumb">Controle de acesso</div><h1>Liberação e acessos</h1></div></div>
+      ${avisoDemo()}
       <section class="panel">
         <div class="panel-h">${ic('unlock')}<h2>Liberar a catraca</h2><span class="sp"></span><span class="muted" style="font-size:.84rem">Libera um giro, para quem esqueceu o cartão ou a senha</span></div>
         <div class="liberar">
@@ -954,7 +959,7 @@ Object.assign(VIEWS, {
     const testar = () => {
       const res = document.getElementById('pRes');
       res.innerHTML = '<p class="res info">Testando a conexão…</p>';
-      ponteApi('status').then(s => { res.innerHTML = `<p class="res ok"><b>Tudo certo.</b> A ponte falou com a catraca no IP ${clean(s.catraca)}.</p>`; })
+      ponteApi('status').then(s => { res.innerHTML = s.demo ? '<p class="res ok"><b>Tudo certo.</b> Conectado à catraca simulada da demonstração.</p>' : `<p class="res ok"><b>Tudo certo.</b> A ponte falou com a catraca no IP ${clean(s.catraca)}.</p>`; })
         .catch(e => { res.innerHTML = `<p class="res bad">${clean(e.message)}</p>`; });
     };
     document.getElementById('pForm').onsubmit = e => {

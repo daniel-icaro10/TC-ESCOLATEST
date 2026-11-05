@@ -52,6 +52,12 @@ O navegador não fala direto com a catraca: ela só tem HTTP na rede local e nã
 
 Dê dois cliques em `ponte-catraca/demo.bat`. Ele abre uma catraca simulada (`simulador.js`, em `127.0.0.1:8790`), sobe a ponte com `config.demo.json` e abre o portal em `http://localhost:8787`. Nada vai para uma catraca de verdade. Os dados do simulador somem quando a janela dele é fechada.
 
+### Demonstração online (para o cliente testar de onde estiver)
+
+O `render.yaml` tem um segundo serviço, `portal-escolar-demo-catraca`, que roda `ponte-catraca/demo-online.js`: portal, ponte e catraca simulada num só processo, com `config.online.json`. O cliente abre o link e testa tudo pelo navegador, inclusive a foto pela webcam. Os dados de teste são compartilhados por quem abrir o link e somem quando o serviço reinicia. No plano gratuito o serviço "dorme" depois de 15 minutos parado e leva cerca de 1 minuto para acordar. Abra o link um pouco antes de mandar.
+
+O `modoDemo` só existe para esse serviço com catraca simulada. Nunca ligue `modoDemo` numa ponte conectada a uma catraca real.
+
 ### Números de cartão
 
 Cartão com número impresso no formato `área,código` (ex.: `123,45678`) é gravado como `área × 2³² + código`, como manda a documentação da Control iD. Só dígitos são gravados como estão. Na dúvida, use **Ler na catraca** e o aluno aproxima o cartão do leitor.
