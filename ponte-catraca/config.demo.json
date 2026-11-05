@@ -6,6 +6,5 @@
   "acaoLiberar": "catra",
   "sentidoEntrada": "clockwise",
   "grupoId": 1,
-  "servirPortal": true,
-  "bloquearConfig": true
+  "servirPortal": true
 }

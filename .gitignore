@@ -13,3 +13,7 @@ espa*amento.jpeg
 
 # Configuração local da ponte da catraca (tem a senha da catraca)
 ponte-catraca/config.json
+
+# Configuração salva pela tela quando o portal roda pelo demo.bat
+ponte-catraca/config.demo.local.json
+ponte-catraca/*.tmp

@@ -988,10 +988,10 @@ Object.assign(VIEWS, {
           <label class="field" for="kGrupo">Grupo de acesso dos alunos<input id="kGrupo" type="number" min="0" value="${clean(c.grupoId)}" ${dis}></label>
           <label class="field" for="kSecbox" id="fSecbox">Número da SecBox<input id="kSecbox" type="number" min="0" value="${clean(c.secBoxId)}" ${dis}></label>
           <label class="field" for="kRele" id="fRele">Número do relé<input id="kRele" type="number" min="1" max="8" value="${clean(c.porta_rele)}" ${dis}></label>
-          <label class="field full" for="kOrig">Endereços do portal na internet que podem usar a ponte
+          <label class="field full" for="kOrig" ${c.demo ? 'hidden' : ''}>Endereços do portal na internet que podem usar a ponte
             <textarea id="kOrig" rows="2" placeholder="Um por linha. Ex.: https://portal-escolar-futuro.onrender.com" ${dis}>${extras.map(clean).join('\n')}</textarea></label>
           <p class="form-note">O sentido da entrada é o giro que leva o aluno para dentro da escola: se a liberação de entrada abrir para o lado errado, troque aqui. O grupo de acesso vem da configuração da catraca (o padrão costuma ser 1). Este computador sempre pode usar a ponte.</p>
-          <div class="full" id="cfgRes" role="status">${ed ? '' : '<p class="res info">Na demonstração a catraca é simulada e a configuração fica bloqueada.</p>'}</div>
+          <div class="full" id="cfgRes" role="status">${!ed ? '<p class="res info">A configuração desta ponte está bloqueada.</p>' : c.demo ? `<p class="res info">Demonstração online: a catraca simulada fica no IP <b>${clean(c.catraca.ip)}</b>, usuário <b>admin</b> e senha <b>admin</b>. Teste à vontade; na escola, aqui vai o IP da catraca de verdade.</p>` : ''}</div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">
           <button type="button" class="btn" id="kTestar" ${dis}>Testar conexão</button>

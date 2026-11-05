@@ -46,8 +46,15 @@ try {
   cfg = { ...PADRAO, ...lido, catraca: { ...PADRAO.catraca, ...(lido.catraca || {}) } };
 } catch (e) {
   if (e.code !== 'ENOENT') { console.error(`${path.basename(ARQ_CONFIG)} inválido:`, e.message); process.exit(1); }
-  console.log('Primeira vez: configure a catraca no portal, em Controle de acesso > Conexão com a catraca.');
+  // o demo.bat grava num arquivo local e começa com os valores de config.demo.json
+  const inicial = process.env.PONTE_CONFIG_PADRAO && path.resolve(__dirname, process.env.PONTE_CONFIG_PADRAO);
+  if (inicial && fs.existsSync(inicial)) {
+    const lido = JSON.parse(fs.readFileSync(inicial, 'utf8'));
+    cfg = { ...PADRAO, ...lido, catraca: { ...PADRAO.catraca, ...(lido.catraca || {}) } };
+  } else console.log('Primeira vez: configure a catraca no portal, em Controle de acesso > Conexão com a catraca.');
 }
+// na demonstração online só existe a catraca simulada: a ponte não aceita apontar para outro endereço
+const IP_DEMO = cfg.catraca.ip;
 function gravarConfig() {
   const { host, token, origensPermitidas, catraca, acaoLiberar, sentidoEntrada, secBoxId, porta_rele, grupoId, servirPortal } = cfg;
   const tmp = ARQ_CONFIG + '.tmp';
@@ -301,7 +308,7 @@ function configPublica() {
     catraca: { ip: cfg.catraca.ip, usuario: cfg.catraca.usuario, senhaDefinida: !!cfg.catraca.senha },
     acaoLiberar: cfg.acaoLiberar, sentidoEntrada: cfg.sentidoEntrada, grupoId: cfg.grupoId,
     secBoxId: cfg.secBoxId, porta_rele: cfg.porta_rele, origensPermitidas: cfg.origensPermitidas,
-    editavel: !cfg.modoDemo && !cfg.bloquearConfig
+    editavel: !cfg.bloquearConfig, demo: !!cfg.modoDemo
   };
 }
 
@@ -309,6 +316,7 @@ function validarConfig(d) {
   const c = d.catraca || {};
   const ip = String(c.ip || '').trim();
   if (!/^[a-zA-Z0-9.-]{1,253}(:\d{1,5})?$/.test(ip)) throw new ErroCatraca('IP da catraca inválido. Exemplo: 192.168.0.129', 400);
+  if (cfg.modoDemo && ip !== IP_DEMO) throw new ErroCatraca(`Na demonstração online só existe a catraca simulada, no IP ${IP_DEMO}. Na escola, coloque aqui o IP da catraca de verdade.`, 400);
   const usuario = String(c.usuario || '').trim();
   if (!usuario || usuario.length > 64) throw new ErroCatraca('Informe o usuário de administrador da catraca.', 400);
   const senha = c.senha ? String(c.senha) : cfg.catraca.senha;   // em branco mantém a senha atual
@@ -324,23 +332,24 @@ function validarConfig(d) {
     secBoxId: inteiro(d.secBoxId ?? cfg.secBoxId, 0, 1e12, 'Número da SecBox'),
     porta_rele: inteiro(d.porta_rele ?? cfg.porta_rele, 1, 8, 'Número do relé'),
     // o próprio computador sempre pode usar a ponte
-    origensPermitidas: [...new Set([`http://localhost:${cfg.porta}`, `http://127.0.0.1:${cfg.porta}`, ...origens])]
+    origensPermitidas: cfg.modoDemo ? cfg.origensPermitidas : [...new Set([`http://localhost:${cfg.porta}`, `http://127.0.0.1:${cfg.porta}`, ...origens])]
   };
 }
 
-function salvarConfig(d) {
-  if (cfg.modoDemo || cfg.bloquearConfig) throw new ErroCatraca('Na demonstração a catraca é simulada e a configuração fica bloqueada.', 403);
+async function salvarConfig(d) {
+  if (cfg.bloquearConfig) throw new ErroCatraca('A configuração desta ponte está bloqueada.', 403);
   const novo = validarConfig(d);
+  // a demonstração online é compartilhada: só salva dados que funcionam, para ninguém derrubar a demo dos outros
+  if (cfg.modoDemo) await testarConfig(d);
   cfg = { ...cfg, ...novo };
   sessao = null;            // próximo pedido faz login com os dados novos
-  gravarConfig();
+  if (!cfg.modoDemo) gravarConfig();   // na demonstração online fica só na memória
   console.log(new Date().toLocaleString('pt-BR'), `configuração alterada pelo portal: catraca ${cfg.catraca.ip}, ação ${cfg.acaoLiberar}`);
   return configPublica();
 }
 
 /* testa o login com o que está digitado na tela, sem salvar */
 async function testarConfig(d) {
-  if (cfg.modoDemo || cfg.bloquearConfig) { await login(); return { ok: true }; }
   const c = validarConfig(d).catraca;
   const { status, json } = await bruto('login.fcgi', { corpo: { login: c.usuario, password: c.senha }, comSessao: false, ip: c.ip, timeout: 8000 });
   if (status !== 200 || !json.session) throw new ErroCatraca('A catraca respondeu, mas recusou o usuário ou a senha.', 422);
@@ -425,7 +434,7 @@ const servidor = http.createServer(async (req, res) => {
     } else if (req.method === 'GET' && rota === '/api/config') {
       dados = configPublica();
     } else if (req.method === 'PUT' && rota === '/api/config') {
-      dados = salvarConfig(await lerCorpo(req));
+      dados = await salvarConfig(await lerCorpo(req));
     } else if (req.method === 'POST' && rota === '/api/config/testar') {
       dados = await testarConfig(await lerCorpo(req));
     } else if (req.method === 'GET' && rota === '/api/alunos') {
