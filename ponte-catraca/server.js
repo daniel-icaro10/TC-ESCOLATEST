@@ -25,7 +25,7 @@ const PADRAO = {
   host: '127.0.0.1',                // só este computador acessa a ponte
   porta: 8787,
   token: '',                        // se preencher, o portal precisa mandar o mesmo token
-  origensPermitidas: ['http://localhost:8787', 'http://127.0.0.1:8787'],
+  origensPermitidas: ['http://localhost:8787', 'http://127.0.0.1:8787', 'https://portal-escolar-futuro.onrender.com'],
   catraca: { ip: '192.168.0.129', usuario: 'admin', senha: 'admin' },
   acaoLiberar: 'catra',             // iDBlock: "catra"; iDFace/iDFlex com SecBox: "sec_box"; iDAccess: "door"
   sentidoEntrada: 'clockwise',      // sentido do giro que é a ENTRADA na escola
@@ -33,23 +33,32 @@ const PADRAO = {
   porta_rele: 1,                    // usado só quando acaoLiberar = "door"
   grupoId: 1,                       // grupo da catraca em que os alunos entram (regra de acesso)
   servirPortal: true,               // abre o portal em http://localhost:8787
+  bloquearConfig: false,            // trava a tela de configuração (usado nas demonstrações)
   modoDemo: false                   // só para a demonstração online com a catraca SIMULADA: aceita acesso pela internet
 };
-// PONTE_CONFIG permite usar outro arquivo (o demo.bat usa config.demo.json, que aponta para o simulador)
+/* A configuração é feita pela tela "Conexão com a catraca" do portal; a ponte grava sozinha
+   em config.json (ninguém precisa editar esse arquivo). PONTE_CONFIG troca o arquivo:
+   o demo.bat e a demonstração online usam arquivos que apontam para o simulador. */
 const ARQ_CONFIG = path.resolve(__dirname, process.env.PONTE_CONFIG || 'config.json');
 let cfg = { ...PADRAO };
 try {
   const lido = JSON.parse(fs.readFileSync(ARQ_CONFIG, 'utf8'));
   cfg = { ...PADRAO, ...lido, catraca: { ...PADRAO.catraca, ...(lido.catraca || {}) } };
 } catch (e) {
-  if (e.code !== 'ENOENT') { console.error('config.json inválido:', e.message); process.exit(1); }
-  console.warn('Sem config.json: usando valores padrão. Copie config.exemplo.json para config.json e ajuste o IP da catraca.');
+  if (e.code !== 'ENOENT') { console.error(`${path.basename(ARQ_CONFIG)} inválido:`, e.message); process.exit(1); }
+  console.log('Primeira vez: configure a catraca no portal, em Controle de acesso > Conexão com a catraca.');
 }
+function gravarConfig() {
+  const { host, token, origensPermitidas, catraca, acaoLiberar, sentidoEntrada, secBoxId, porta_rele, grupoId, servirPortal } = cfg;
+  const tmp = ARQ_CONFIG + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify({ host, porta: portaDoArquivo, token, origensPermitidas, catraca, acaoLiberar, sentidoEntrada, secBoxId, porta_rele, grupoId, servirPortal }, null, 2));
+  fs.renameSync(tmp, ARQ_CONFIG);
+}
+const portaDoArquivo = cfg.porta;
 if (process.env.PORT) cfg.porta = Number(process.env.PORT);   // o Render define a porta por variável de ambiente
 // Endereços pelos quais a ponte local pode ser chamada. Bloqueia "DNS rebinding": um site malicioso
 // que aponta o próprio domínio para 127.0.0.1 para tentar liberar a catraca pelo navegador da recepção.
 const HOSTS_LOCAIS = new Set(['localhost', '127.0.0.1', '[::1]'].map(h => `${h}:${cfg.porta}`));
-const BASE = `http://${cfg.catraca.ip}`;
 const PASTA_PORTAL = path.join(__dirname, '..', 'public');
 
 /* ---------------- Cliente da catraca ---------------- */
@@ -59,10 +68,10 @@ class ErroCatraca extends Error {
   constructor(msg, status = 502, extra) { super(msg); this.status = status; this.extra = extra; }
 }
 
-async function bruto(caminho, { corpo, query = {}, tipo = 'application/json', comSessao = true, timeout = 15000 } = {}) {
+async function bruto(caminho, { corpo, query = {}, tipo = 'application/json', comSessao = true, timeout = 15000, ip = cfg.catraca.ip } = {}) {
   const q = new URLSearchParams(query);
   if (comSessao) q.set('session', sessao);
-  const url = `${BASE}/${caminho}${q.toString() ? '?' + q : ''}`;
+  const url = `http://${ip}/${caminho}${q.toString() ? '?' + q : ''}`;
   let r;
   try {
     r = await fetch(url, {
@@ -73,7 +82,7 @@ async function bruto(caminho, { corpo, query = {}, tipo = 'application/json', co
     });
   } catch (e) {
     const motivo = e.name === 'TimeoutError' ? 'a catraca demorou demais para responder' : 'não foi possível falar com a catraca';
-    throw new ErroCatraca(`${motivo} (${cfg.catraca.ip}). Confira o IP no config.json e se a catraca está ligada na rede.`, 504);
+    throw new ErroCatraca(`${motivo} (${ip}). Confira o IP em Conexão com a catraca e se a catraca está ligada na rede.`, 504);
   }
   const texto = await r.text();
   let json = null;
@@ -83,7 +92,7 @@ async function bruto(caminho, { corpo, query = {}, tipo = 'application/json', co
 
 async function login() {
   const { status, json } = await bruto('login.fcgi', { corpo: { login: cfg.catraca.usuario, password: cfg.catraca.senha }, comSessao: false });
-  if (status !== 200 || !json.session) throw new ErroCatraca('A catraca recusou o login. Confira usuário e senha no config.json.', 502, json);
+  if (status !== 200 || !json.session) throw new ErroCatraca('A catraca recusou o login. Confira usuário e senha em Conexão com a catraca.', 502, json);
   sessao = json.session;
 }
 
@@ -283,9 +292,66 @@ async function acessos(desde, limite) {
   });
 }
 
+/* ---------------- Configuração pela tela do portal ---------------- */
+const ACOES = ['catra', 'sec_box', 'door'], SENTIDOS = ['clockwise', 'anticlockwise'];
+
+/* nunca devolve a senha da catraca, só se ela está preenchida */
+function configPublica() {
+  return {
+    catraca: { ip: cfg.catraca.ip, usuario: cfg.catraca.usuario, senhaDefinida: !!cfg.catraca.senha },
+    acaoLiberar: cfg.acaoLiberar, sentidoEntrada: cfg.sentidoEntrada, grupoId: cfg.grupoId,
+    secBoxId: cfg.secBoxId, porta_rele: cfg.porta_rele, origensPermitidas: cfg.origensPermitidas,
+    editavel: !cfg.modoDemo && !cfg.bloquearConfig
+  };
+}
+
+function validarConfig(d) {
+  const c = d.catraca || {};
+  const ip = String(c.ip || '').trim();
+  if (!/^[a-zA-Z0-9.-]{1,253}(:\d{1,5})?$/.test(ip)) throw new ErroCatraca('IP da catraca inválido. Exemplo: 192.168.0.129', 400);
+  const usuario = String(c.usuario || '').trim();
+  if (!usuario || usuario.length > 64) throw new ErroCatraca('Informe o usuário de administrador da catraca.', 400);
+  const senha = c.senha ? String(c.senha) : cfg.catraca.senha;   // em branco mantém a senha atual
+  if (!ACOES.includes(d.acaoLiberar)) throw new ErroCatraca('Escolha o modelo da catraca.', 400);
+  if (!SENTIDOS.includes(d.sentidoEntrada)) throw new ErroCatraca('Escolha o sentido da entrada.', 400);
+  const inteiro = (v, min, max, nome) => { const n = Number(v); if (!Number.isInteger(n) || n < min || n > max) throw new ErroCatraca(`${nome} inválido.`, 400); return n; };
+  const origens = (Array.isArray(d.origensPermitidas) ? d.origensPermitidas : []).map(o => String(o).trim().replace(/\/+$/, '')).filter(Boolean);
+  origens.forEach(o => { if (!/^https?:\/\/[^\s/]+$/.test(o)) throw new ErroCatraca(`Endereço do portal inválido: ${o}. Exemplo: https://meuportal.onrender.com`, 400); });
+  return {
+    catraca: { ip, usuario, senha },
+    acaoLiberar: d.acaoLiberar, sentidoEntrada: d.sentidoEntrada,
+    grupoId: inteiro(d.grupoId ?? cfg.grupoId, 0, 1e9, 'Grupo de acesso'),
+    secBoxId: inteiro(d.secBoxId ?? cfg.secBoxId, 0, 1e12, 'Número da SecBox'),
+    porta_rele: inteiro(d.porta_rele ?? cfg.porta_rele, 1, 8, 'Número do relé'),
+    // o próprio computador sempre pode usar a ponte
+    origensPermitidas: [...new Set([`http://localhost:${cfg.porta}`, `http://127.0.0.1:${cfg.porta}`, ...origens])]
+  };
+}
+
+function salvarConfig(d) {
+  if (cfg.modoDemo || cfg.bloquearConfig) throw new ErroCatraca('Na demonstração a catraca é simulada e a configuração fica bloqueada.', 403);
+  const novo = validarConfig(d);
+  cfg = { ...cfg, ...novo };
+  sessao = null;            // próximo pedido faz login com os dados novos
+  gravarConfig();
+  console.log(new Date().toLocaleString('pt-BR'), `configuração alterada pelo portal: catraca ${cfg.catraca.ip}, ação ${cfg.acaoLiberar}`);
+  return configPublica();
+}
+
+/* testa o login com o que está digitado na tela, sem salvar */
+async function testarConfig(d) {
+  if (cfg.modoDemo || cfg.bloquearConfig) { await login(); return { ok: true }; }
+  const c = validarConfig(d).catraca;
+  const { status, json } = await bruto('login.fcgi', { corpo: { login: c.usuario, password: c.senha }, comSessao: false, ip: c.ip, timeout: 8000 });
+  if (status !== 200 || !json.session) throw new ErroCatraca('A catraca respondeu, mas recusou o usuário ou a senha.', 422);
+  await bruto('logout.fcgi', { query: { session: json.session }, comSessao: false, ip: c.ip }).catch(() => {});
+  return { ok: true };
+}
+
 /* ---------------- Servidor HTTP ---------------- */
 /* Na demonstração online o portal e a ponte estão no mesmo endereço; fora dela vale só a lista do config. */
 function origemPermitida(req, origem) {
+  if (origem === `http://localhost:${cfg.porta}` || origem === `http://127.0.0.1:${cfg.porta}`) return true;   // o próprio computador
   if (cfg.origensPermitidas.includes(origem)) return true;
   if (!cfg.modoDemo) return false;
   try { return new URL(origem).host === req.headers.host; } catch (e) { return false; }
@@ -345,7 +411,7 @@ const servidor = http.createServer(async (req, res) => {
     return responder(req, res, 403, { erro: 'Acesse a ponte por http://localhost:' + cfg.porta + '.' });
   // pedidos vindos de outro site que não está na lista são recusados
   const origem = req.headers.origin;
-  if (origem && !origemPermitida(req, origem)) return responder(req, res, 403, { erro: `Origem ${origem} não autorizada. Inclua em origensPermitidas no config.json.` });
+  if (origem && !origemPermitida(req, origem)) return responder(req, res, 403, { erro: `O endereço ${origem} não está liberado na ponte. Abra o portal em http://localhost:${cfg.porta} e inclua esse endereço em Conexão com a catraca.` });
   if (cfg.token && req.headers['x-token'] !== cfg.token) return responder(req, res, 401, { erro: 'Token da ponte incorreto.' });
 
   try {
@@ -356,6 +422,12 @@ const servidor = http.createServer(async (req, res) => {
       let v = await api('session_is_valid.fcgi');
       if (v.session_is_valid === false) { await login(); v = await api('session_is_valid.fcgi'); }
       dados = { ok: true, catraca: cfg.modoDemo ? 'simulada' : cfg.catraca.ip, sessao: v.session_is_valid !== false, acao: cfg.acaoLiberar, demo: !!cfg.modoDemo };
+    } else if (req.method === 'GET' && rota === '/api/config') {
+      dados = configPublica();
+    } else if (req.method === 'PUT' && rota === '/api/config') {
+      dados = salvarConfig(await lerCorpo(req));
+    } else if (req.method === 'POST' && rota === '/api/config/testar') {
+      dados = await testarConfig(await lerCorpo(req));
     } else if (req.method === 'GET' && rota === '/api/alunos') {
       dados = await listarAlunos();
     } else if (m && req.method === 'PUT' && !m[2]) {
@@ -386,6 +458,6 @@ const servidor = http.createServer(async (req, res) => {
 
 servidor.listen(cfg.porta, cfg.host, () => {
   console.log(`Ponte da catraca rodando em http://${cfg.host === '0.0.0.0' ? 'localhost' : cfg.host}:${cfg.porta}`);
-  console.log(`Catraca Control iD em ${BASE} · ação de liberar: ${cfg.acaoLiberar}`);
+  console.log(`Catraca Control iD em http://${cfg.catraca.ip} · ação de liberar: ${cfg.acaoLiberar}`);
   if (cfg.servirPortal) console.log(`Portal disponível em http://localhost:${cfg.porta}`);
 });

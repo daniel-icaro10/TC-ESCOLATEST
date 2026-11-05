@@ -38,15 +38,17 @@ O navegador não fala direto com a catraca: ela só tem HTTP na rede local e nã
 
 ### Instalar a ponte
 
-1. Instale o Node.js 18 ou mais novo.
-2. Copie `ponte-catraca/config.exemplo.json` para `ponte-catraca/config.json` e ajuste:
-   - `catraca.ip`, `catraca.usuario`, `catraca.senha`: IP e login de administrador da catraca (o padrão de fábrica é `admin` / `admin`).
-   - `acaoLiberar`: `catra` para iDBlock, `sec_box` para iDFace/iDFlex com SecBox, `door` para relé.
-   - `sentidoEntrada`: o giro (`clockwise` ou `anticlockwise`) que corresponde à entrada.
-   - `grupoId`: grupo da catraca com a regra de acesso dos alunos.
-   - `origensPermitidas`: endereços do portal que podem usar a ponte (inclua o endereço do Render).
-   - `token`: opcional; se preencher, informe o mesmo token na tela **Conexão com a catraca**.
-3. Rode `iniciar.bat` (ou `node server.js`). A ponte escuta só em `127.0.0.1:8787` e também serve o portal em `http://localhost:8787`.
+1. Instale o Node.js 18 ou mais novo no computador da recepção (na mesma rede da catraca).
+2. Copie a pasta `ponte-catraca` para esse computador e dê dois cliques em `iniciar.bat`. Deixe a janela aberta.
+3. O portal abre em `http://localhost:8787/#catraca-config`. Preencha na tela:
+   - **IP da catraca**, **usuário** e **senha** de administrador (o padrão de fábrica é `admin` / `admin`).
+   - **Modelo**: iDBlock, iDFace/iDFlex com SecBox, ou porta com relé.
+   - **Sentido da entrada**: o giro que leva para dentro da escola.
+   - **Grupo de acesso dos alunos**: grupo da catraca com a regra de acesso (normalmente 1).
+   - **Endereços do portal na internet**: se for usar o portal pelo Render, coloque o endereço dele.
+4. Clique em **Testar conexão** e depois em **Salvar**.
+
+Não é preciso editar arquivo nenhum. A ponte grava a configuração sozinha em `ponte-catraca/config.json` (fora do Git, porque tem a senha da catraca) e nunca devolve a senha para o navegador. A ponte escuta só em `127.0.0.1:8787`, então só o próprio computador da recepção consegue usá-la.
 
 ### Testar sem a catraca
 

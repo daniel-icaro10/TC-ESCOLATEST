@@ -127,7 +127,8 @@ h2 { font-size: 1.05rem; font-weight: 700; }
 .btn.teal { background: var(--teal); border-color: var(--teal); color: var(--on-color); }
 .btn.red { background: var(--red); border-color: var(--red); color: #fff; }
 .field { display: flex; flex-direction: column; gap: 5px; font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-.field input, .field select { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: .92rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; min-width: 0; }
+.field textarea { resize: vertical; font: inherit; }
+.field input, .field select, .field textarea { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: .92rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; min-width: 0; }
 .filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 16px 20px; }
 
 /* ---------- Início ---------- */
@@ -282,7 +283,7 @@ h1 { font-size: 1.6rem; letter-spacing: -.01em; }
 .rel th { color: var(--muted); }
 .lupa:hover { background: var(--teal-soft); color: var(--teal-dark); border-color: var(--sky); }
 .help { color: var(--teal); border-color: var(--sky); }
-.field input:focus, .field select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
 
 /* ---------- Catraca (controle de acesso) ---------- */
 .cat-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 22px; padding: 4px 0 10px; align-items: start; }
@@ -937,37 +938,97 @@ Object.assign(VIEWS, {
   'catraca-config'() {
     view.innerHTML = `
       <div class="page-title"><div><div class="crumb">Controle de acesso</div><h1>Conexão com a catraca</h1></div></div>
-      <section class="panel">
-        <div class="panel-h">${ic('plug')}<h2>Ponte da catraca</h2></div>
+      ${avisoDemo()}
+      <section class="panel" ${window.PONTE_NA_ORIGEM ? 'hidden' : ''}>
+        <div class="panel-h">${ic('plug')}<h2>Ponte da catraca</h2><span class="sp"></span><span class="muted" style="font-size:.84rem">Programa que roda no computador da recepção</span></div>
         <form id="pForm" class="filters" novalidate>
           <label class="field" for="pUrl" style="flex:1;min-width:240px">Endereço da ponte<input id="pUrl" value="${clean(ponte.url)}" placeholder="http://localhost:8787"></label>
           <label class="field" for="pTok" style="flex:1;min-width:180px">Token (se configurado)<input id="pTok" type="password" value="${clean(ponte.token)}" autocomplete="off"></label>
-          <button class="btn blue" type="submit">Salvar e testar</button>
+          <button class="btn blue" type="submit">Conectar</button>
         </form>
         <div id="pRes" style="padding:0 22px 20px" role="status"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-h">${ic('settings')}<h2>Catraca</h2></div>
+        <form id="cfgForm" novalidate style="padding:18px 22px 22px">
+          <div id="cfgCorpo"><p class="res info">Carregando a configuração da ponte…</p></div>
+        </form>
       </section>
       <section class="panel">
         <div class="panel-h">${ic('info')}<h2>Como instalar no computador da recepção</h2></div>
         <ol class="passos">
           <li>Instale o <b>Node.js</b> (versão 18 ou mais nova) no computador que fica na mesma rede da catraca.</li>
           <li>Copie a pasta <code>ponte-catraca</code> do projeto para esse computador.</li>
-          <li>Copie <code>config.exemplo.json</code> para <code>config.json</code> e coloque o <b>IP da catraca</b>, o usuário e a senha de administrador dela.</li>
           <li>Dê dois cliques em <code>iniciar.bat</code>. Deixe a janela aberta enquanto a catraca estiver em uso.</li>
-          <li>Abra o portal em <code>http://localhost:8787</code> nesse computador, ou use o endereço do portal na internet (ele precisa estar em <code>origensPermitidas</code> no <code>config.json</code>).</li>
+          <li>O portal abre sozinho nesta tela, em <code>http://localhost:8787</code>. Preencha os dados da catraca acima, clique em <b>Testar conexão</b> e depois em <b>Salvar</b>.</li>
         </ol>
       </section>`;
-    const testar = () => {
-      const res = document.getElementById('pRes');
-      res.innerHTML = '<p class="res info">Testando a conexão…</p>';
-      ponteApi('status').then(s => { res.innerHTML = s.demo ? '<p class="res ok"><b>Tudo certo.</b> Conectado à catraca simulada da demonstração.</p>' : `<p class="res ok"><b>Tudo certo.</b> A ponte falou com a catraca no IP ${clean(s.catraca)}.</p>`; })
-        .catch(e => { res.innerHTML = `<p class="res bad">${clean(e.message)}</p>`; });
+    const $ = id => document.getElementById(id);
+    const msgCfg = (tipo, html) => { const r = $('cfgRes'); if (r) r.innerHTML = html ? `<p class="res ${tipo}">${html}</p>` : ''; };
+    const lerForm = () => ({
+      catraca: { ip: $('kIp').value.trim(), usuario: $('kUser').value.trim(), senha: $('kSenha').value },
+      acaoLiberar: $('kAcao').value, sentidoEntrada: $('kSentido').value,
+      grupoId: $('kGrupo').value, secBoxId: $('kSecbox').value, porta_rele: $('kRele').value,
+      origensPermitidas: $('kOrig').value.split(/\s+/).filter(Boolean)
+    });
+    const ajustaModelo = () => { $('fSecbox').hidden = $('kAcao').value !== 'sec_box'; $('fRele').hidden = $('kAcao').value !== 'door'; };
+    const desenha = c => {
+      const ed = c.editavel, dis = ed ? '' : 'disabled';
+      const extras = c.origensPermitidas.filter(o => !/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(o));
+      const op = (v, t, atual) => `<option value="${v}" ${v === atual ? 'selected' : ''}>${t}</option>`;
+      $('cfgCorpo').innerHTML = `
+        <div class="form-grid">
+          <label class="field" for="kIp">IP da catraca *<input id="kIp" value="${clean(c.catraca.ip)}" placeholder="Ex.: 192.168.0.129" ${dis}></label>
+          <label class="field" for="kAcao">Modelo *<select id="kAcao" ${dis}>
+            ${op('catra', 'Catraca iDBlock', c.acaoLiberar)}${op('sec_box', 'iDFace / iDFlex com SecBox', c.acaoLiberar)}${op('door', 'Porta com relé (iDAccess)', c.acaoLiberar)}</select></label>
+          <label class="field" for="kUser">Usuário administrador *<input id="kUser" value="${clean(c.catraca.usuario)}" autocomplete="off" ${dis}></label>
+          <label class="field" for="kSenha">Senha da catraca<input id="kSenha" type="password" autocomplete="new-password" placeholder="${c.catraca.senhaDefinida ? 'Já salva. Em branco mantém a atual' : 'Senha do administrador'}" ${dis}></label>
+          <label class="field" for="kSentido">Sentido da entrada *<select id="kSentido" ${dis}>
+            ${op('clockwise', 'Horário', c.sentidoEntrada)}${op('anticlockwise', 'Anti-horário', c.sentidoEntrada)}</select></label>
+          <label class="field" for="kGrupo">Grupo de acesso dos alunos<input id="kGrupo" type="number" min="0" value="${clean(c.grupoId)}" ${dis}></label>
+          <label class="field" for="kSecbox" id="fSecbox">Número da SecBox<input id="kSecbox" type="number" min="0" value="${clean(c.secBoxId)}" ${dis}></label>
+          <label class="field" for="kRele" id="fRele">Número do relé<input id="kRele" type="number" min="1" max="8" value="${clean(c.porta_rele)}" ${dis}></label>
+          <label class="field full" for="kOrig">Endereços do portal na internet que podem usar a ponte
+            <textarea id="kOrig" rows="2" placeholder="Um por linha. Ex.: https://portal-escolar-futuro.onrender.com" ${dis}>${extras.map(clean).join('\n')}</textarea></label>
+          <p class="form-note">O sentido da entrada é o giro que leva o aluno para dentro da escola: se a liberação de entrada abrir para o lado errado, troque aqui. O grupo de acesso vem da configuração da catraca (o padrão costuma ser 1). Este computador sempre pode usar a ponte.</p>
+          <div class="full" id="cfgRes" role="status">${ed ? '' : '<p class="res info">Na demonstração a catraca é simulada e a configuração fica bloqueada.</p>'}</div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">
+          <button type="button" class="btn" id="kTestar" ${dis}>Testar conexão</button>
+          <button type="submit" class="btn blue" ${dis}>Salvar</button>
+        </div>`;
+      ajustaModelo();
+      $('kAcao').onchange = ajustaModelo;
+      $('kTestar').onclick = async () => {
+        msgCfg('info', 'Testando com os dados digitados…');
+        try { await ponteApi('config/testar', { metodo: 'POST', corpo: lerForm() }); msgCfg('ok', '<b>Conectou.</b> A catraca aceitou o usuário e a senha. Clique em Salvar para usar estes dados.'); }
+        catch (e) { msgCfg('bad', clean(e.message)); }
+      };
     };
-    document.getElementById('pForm').onsubmit = e => {
+    $('cfgForm').onsubmit = async e => {
       e.preventDefault();
-      ponte = { url: document.getElementById('pUrl').value.trim() || 'http://localhost:8787', token: document.getElementById('pTok').value.trim() };
-      salvarPonte(); testar();
+      if (!$('kIp')) return;
+      msgCfg('info', 'Salvando…');
+      try {
+        const c = await ponteApi('config', { metodo: 'PUT', corpo: lerForm() });
+        desenha(c);
+        msgCfg('info', 'Salvo. Testando a conexão com a catraca…');
+        try { await ponteApi('status'); msgCfg('ok', '<b>Configuração salva e catraca conectada.</b>'); }
+        catch (err) { msgCfg('bad', `Configuração salva, mas a catraca não respondeu: ${clean(err.message)}`); }
+      } catch (err) { msgCfg('bad', clean(err.message)); }
     };
-    testar();
+    const carregar = () => ponteApi('config').then(desenha).catch(e => {
+      $('cfgCorpo').innerHTML = `<p class="res bad">${clean(e.message)}</p>`;
+    });
+    $('pForm').onsubmit = e => {
+      e.preventDefault();
+      ponte = { url: $('pUrl').value.trim() || 'http://localhost:8787', token: $('pTok').value.trim() };
+      salvarPonte();
+      $('pRes').innerHTML = '<p class="res info">Conectando…</p>';
+      ponteApi('config').then(c => { $('pRes').innerHTML = '<p class="res ok">Ponte conectada.</p>'; desenha(c); })
+        .catch(err => { $('pRes').innerHTML = `<p class="res bad">${clean(err.message)}</p>`; });
+    };
+    carregar();
   }
 });
 
