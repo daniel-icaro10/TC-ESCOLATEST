@@ -1,0 +1,7 @@
+{
+  "host": "127.0.0.1",
+  "porta": 8787,
+  "banco": "dados/demo.db",
+  "dadosExemplo": true,
+  "catraca": { "ip": "127.0.0.1:8790", "usuario": "admin", "senha": "admin" }
+}

@@ -11,9 +11,7 @@ Thumbs.db
 # Prints de referência de layout
 espa*amento.jpeg
 
-# Configuração local da ponte da catraca (tem a senha da catraca)
-ponte-catraca/config.json
-
-# Configuração salva pela tela quando o portal roda pelo demo.bat
-ponte-catraca/config.demo.local.json
-ponte-catraca/*.tmp
+# Configuração local do servidor e banco de dados (têm dados dos alunos e a senha da catraca)
+servidor/config.json
+servidor/dados/
+servidor/*.tmp

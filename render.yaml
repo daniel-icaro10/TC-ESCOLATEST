@@ -1,38 +1,17 @@
-# Blueprint do Render: site estático, sem build.
+# Blueprint do Render: demonstração online do sistema.
+# O sistema de verdade roda no computador da escola (servidor/iniciar.bat), porque precisa
+# estar na mesma rede da catraca e guarda os dados dos alunos dentro da escola.
 services:
-  - type: web
-    name: portal-escolar-futuro
-    runtime: static
-    buildCommand: echo "Site estático, sem etapa de build"
-    staticPublishPath: ./public
-    pullRequestPreviewsEnabled: false
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: Referrer-Policy
-        value: strict-origin-when-cross-origin
-      # página principal sem cache, para cada atualização aparecer na hora
-      - path: /
-        name: Cache-Control
-        value: no-cache
-      - path: /index.html
-        name: Cache-Control
-        value: no-cache
-
-  # Demonstração da catraca Control iD com catraca SIMULADA (não fala com equipamento real).
-  # Sobe o portal + a ponte + o simulador num só processo. O cliente testa pelo navegador.
+  # Demonstração com dados fictícios e catraca SIMULADA (não fala com equipamento real).
+  # Sobe o portal + o servidor + o simulador num só processo. Os dados ficam só na memória
+  # e voltam ao estado inicial quando o serviço reinicia.
   - type: web
     name: portal-escolar-demo-catraca
     runtime: node
     plan: free
     buildCommand: echo "Sem dependências para instalar"
-    startCommand: node ponte-catraca/demo-online.js
-    healthCheckPath: /
+    startCommand: node servidor/demo-online.js
+    healthCheckPath: /api/sessao
     envVars:
       - key: NODE_VERSION
         value: "22"

@@ -1,6 +1,6 @@
 @echo off
 cd /d "%~dp0"
-title Ponte da catraca
+title Portal escolar (servidor)
 where node >nul 2>nul
 if errorlevel 1 (
   echo.
@@ -10,8 +10,7 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-echo Ponte da catraca: deixe esta janela aberta.
-echo Configure a catraca no portal: http://localhost:8787/#catraca-config
-start "" /min cmd /c "ping -n 3 127.0.0.1 >nul & start "" http://localhost:8787/#catraca-config"
+echo Servidor do portal escolar: deixe esta janela aberta.
+start "" /min cmd /c "ping -n 3 127.0.0.1 >nul & start "" http://localhost:8787/"
 node server.js
 pause

@@ -1,0 +1,8 @@
+{
+  "host": "0.0.0.0",
+  "porta": 8787,
+  "banco": ":memory:",
+  "dadosExemplo": true,
+  "modoDemo": true,
+  "catraca": { "ip": "127.0.0.1:8790", "usuario": "admin", "senha": "admin" }
+}

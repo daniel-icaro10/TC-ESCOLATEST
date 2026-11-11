@@ -1,6 +1,6 @@
 @echo off
 cd /d "%~dp0"
-title Ponte da catraca (DEMONSTRACAO)
+title Portal escolar (DEMONSTRACAO)
 where node >nul 2>nul
 if errorlevel 1 (
   echo.
@@ -10,10 +10,10 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-echo Demonstracao: catraca SIMULADA no IP 127.0.0.1:8790, nada vai para uma catraca de verdade.
+echo Demonstracao: dados ficticios e catraca SIMULADA no IP 127.0.0.1:8790.
+echo Nada vai para uma catraca de verdade. Usuarios de teste: admin.demo / demo1234
 start "Catraca simulada" cmd /k node simulador.js
-start "" /min cmd /c "ping -n 4 127.0.0.1 >nul & start "" http://localhost:8787/#catraca-cadastro"
-set PONTE_CONFIG=config.demo.local.json
-set PONTE_CONFIG_PADRAO=config.demo.json
+start "" /min cmd /c "ping -n 4 127.0.0.1 >nul & start "" http://localhost:8787/"
+set CONFIG=config.demo.json
 node server.js
 pause
