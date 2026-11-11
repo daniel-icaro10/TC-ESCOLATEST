@@ -245,8 +245,9 @@ const MENU = [
     { id: 'catraca-cadastro', label: 'Cadastro facial', perm: 'catraca' }, { id: 'catraca-acessos', label: 'Liberação e acessos', perm: 'catraca.acessos' },
     { id: 'catraca-config', label: 'Conexão com a catraca', perm: 'catraca.config' }] },
   { label: 'Pedagógico', icon: 'cap', perm: ['pedagogico', 'pedagogico.ver', 'pedagogico.proprio', 'notas.proprias'], children: [
-    { label: 'Professor', icon: 'coffee', perm: ['notas.proprias', 'pedagogico.proprio'], children: [{ id: 'meus-diarios', label: 'Meus diários', perm: 'notas.proprias' }, { id: 'planejamento', label: 'Planejamento de aulas', perm: 'pedagogico.proprio' }] },
-    { label: 'Coordenação', icon: 'case', perm: ['pedagogico', 'pedagogico.ver'], children: [{ id: 'acompanhamento', label: 'Acompanhamento pedagógico' }, { id: 'ocorrencias', label: 'Ocorrências' }] }
+    { label: 'Professor', icon: 'coffee', perm: ['notas.proprias', 'pedagogico.proprio'], children: [{ id: 'meus-diarios', label: 'Meus diários', perm: 'notas.proprias' }, { id: 'planejamento', label: 'Planejamento de aulas', perm: 'pedagogico.proprio' },
+      { id: 'horarios', label: 'Meu horário', perm: 'notas.proprias' }, { id: 'habilidades', label: 'Habilidades (BNCC)', perm: 'notas.proprias' }, { id: 'ocorrencias', label: 'Ocorrências', perm: 'pedagogico.proprio' }] },
+    { label: 'Coordenação', icon: 'case', perm: ['pedagogico', 'pedagogico.ver'], children: [{ id: 'acompanhamento', label: 'Acompanhamento pedagógico' }, { id: 'ocorrencias', label: 'Ocorrências' }, { id: 'planejamento', label: 'Planejamentos dos professores' }] }
   ] },
   { label: 'Financeiro', icon: 'dollar', perm: 'financeiro.ver', children: [{ id: 'mensalidades', label: 'Mensalidades' }, { id: 'inadimplencia', label: 'Inadimplência' }] },
   { id: 'relatorios', label: 'Central de relatórios', icon: 'chart', perm: 'relatorios' },

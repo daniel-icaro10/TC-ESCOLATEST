@@ -32,6 +32,7 @@ const { criarCatraca } = require('./catraca');
 const { criarAcademico } = require('./academico');
 const { criarMatriculas } = require('./matriculas');
 const { criarComunicacao } = require('./comunicacao');
+const { criarPedagogico } = require('./pedagogico');
 
 /* ---------------- Configuração ---------------- */
 const PADRAO = {
@@ -78,6 +79,7 @@ catraca.registrar(roteador.rota);
 criarAcademico(db, escola).registrar(roteador.rota);
 criarMatriculas(db, escola).registrar(roteador.rota);
 criarComunicacao(db).registrar(roteador.rota);
+criarPedagogico(db).registrar(roteador.rota);
 
 /* backup diário do banco (guarda os últimos 30 dias) */
 function fazerBackup() {

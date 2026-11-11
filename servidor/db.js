@@ -139,6 +139,40 @@ const MIGRACOES = [
   );
   CREATE INDEX mensagens_para ON mensagens(para_id, apagada_para);
   CREATE INDEX mensagens_de ON mensagens(de_id, apagada_de);
+  `,
+  /* v5: pedagógico (horários, ocorrências, planejamento, habilidades e simulados) */
+  `
+  CREATE TABLE horarios (
+    turma_id INTEGER NOT NULL REFERENCES turmas(id) ON DELETE CASCADE, dia INTEGER NOT NULL CHECK (dia BETWEEN 1 AND 6),
+    aula INTEGER NOT NULL CHECK (aula BETWEEN 1 AND 12), disciplina_id INTEGER REFERENCES disciplinas(id) ON DELETE SET NULL,
+    PRIMARY KEY (turma_id, dia, aula)
+  );
+  CREATE TABLE horario_tempos (turma_id INTEGER NOT NULL REFERENCES turmas(id) ON DELETE CASCADE, aula INTEGER NOT NULL, inicio TEXT, fim TEXT, PRIMARY KEY (turma_id, aula));
+  CREATE TABLE ocorrencias (
+    id INTEGER PRIMARY KEY, aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE, data TEXT NOT NULL, tipo TEXT NOT NULL,
+    descricao TEXT NOT NULL, providencia TEXT, responsavel_avisado INTEGER NOT NULL DEFAULT 0, resolvida INTEGER NOT NULL DEFAULT 0,
+    autor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, autor TEXT, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX ocorrencias_aluno ON ocorrencias(aluno_id);
+  CREATE TABLE planos (
+    id INTEGER PRIMARY KEY, professor_id INTEGER REFERENCES professores(id) ON DELETE CASCADE,
+    turma_id INTEGER NOT NULL REFERENCES turmas(id) ON DELETE CASCADE, disciplina_id INTEGER NOT NULL REFERENCES disciplinas(id) ON DELETE CASCADE,
+    inicio TEXT NOT NULL, fim TEXT, titulo TEXT NOT NULL, objetivos TEXT, conteudo TEXT, metodologia TEXT, avaliacao TEXT, habilidades TEXT,
+    status TEXT NOT NULL DEFAULT 'rascunho', comentario TEXT, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, atualizado_em TEXT
+  );
+  CREATE TABLE habilidades (
+    id INTEGER PRIMARY KEY, turma_id INTEGER NOT NULL REFERENCES turmas(id) ON DELETE CASCADE,
+    disciplina_id INTEGER NOT NULL REFERENCES disciplinas(id) ON DELETE CASCADE, codigo TEXT, descricao TEXT NOT NULL,
+    bimestre INTEGER, trabalhada INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE simulados (id INTEGER PRIMARY KEY, nome TEXT NOT NULL, data TEXT, ano_letivo INTEGER NOT NULL, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+  CREATE TABLE simulado_turmas (simulado_id INTEGER NOT NULL REFERENCES simulados(id) ON DELETE CASCADE, turma_id INTEGER NOT NULL REFERENCES turmas(id) ON DELETE CASCADE, PRIMARY KEY (simulado_id, turma_id));
+  CREATE TABLE simulado_disciplinas (simulado_id INTEGER NOT NULL REFERENCES simulados(id) ON DELETE CASCADE, disciplina_id INTEGER NOT NULL REFERENCES disciplinas(id) ON DELETE CASCADE, questoes INTEGER NOT NULL, PRIMARY KEY (simulado_id, disciplina_id));
+  CREATE TABLE simulado_resultados (
+    simulado_id INTEGER NOT NULL REFERENCES simulados(id) ON DELETE CASCADE, aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+    disciplina_id INTEGER NOT NULL REFERENCES disciplinas(id) ON DELETE CASCADE, acertos INTEGER NOT NULL,
+    PRIMARY KEY (simulado_id, aluno_id, disciplina_id)
+  );
   `
 ];
 
