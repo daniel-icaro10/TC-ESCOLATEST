@@ -257,10 +257,10 @@ const camposAluno = () => [
 const campoConsentimento = { name: 'consentimentoBiometria', label: 'O responsável autorizou o uso da foto do rosto do aluno na catraca (biometria facial)', type: 'checkbox',
   hint: 'Exigência da LGPD para dados biométricos de menores. Guarde o termo assinado pelo responsável. Sem a autorização, o aluno entra só por cartão ou senha.' };
 
-function formAluno(turmaId, depois) {
+function formAluno(turmaId, depois, inicial = {}) {
   openForm({
     title: 'Novo aluno', sub: `Ano letivo ${anoAtual()} · a matrícula é gerada automaticamente`, submit: 'Matricular aluno', largura: 760,
-    values: { turmaId },
+    values: { turmaId, ...inicial },
     fields: [
       ...camposAluno(),
       { type: 'titulo', name: '_r', label: 'Responsável' },

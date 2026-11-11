@@ -112,6 +112,17 @@ const MIGRACOES = [
     ano_letivo INTEGER NOT NULL, serie INTEGER NOT NULL, escola TEXT NOT NULL, disciplina TEXT NOT NULL,
     media REAL, carga_horaria INTEGER, faltas INTEGER, resultado TEXT
   );
+  `,
+  /* v3: pré-matrícula (pedidos de vaga das famílias) */
+  `
+  CREATE TABLE pre_matriculas (
+    id INTEGER PRIMARY KEY, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, origem TEXT NOT NULL DEFAULT 'online',
+    ano_letivo INTEGER NOT NULL, serie INTEGER NOT NULL, turno TEXT,
+    aluno_nome TEXT NOT NULL, aluno_nascimento TEXT, escola_atual TEXT,
+    resp_nome TEXT NOT NULL, resp_parentesco TEXT, resp_tel TEXT NOT NULL, resp_email TEXT, resp_cpf TEXT,
+    observacoes TEXT, status TEXT NOT NULL DEFAULT 'nova', anotacao TEXT,
+    aluno_id INTEGER REFERENCES alunos(id) ON DELETE SET NULL
+  );
   `
 ];
 
