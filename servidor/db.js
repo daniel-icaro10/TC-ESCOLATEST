@@ -123,6 +123,22 @@ const MIGRACOES = [
     observacoes TEXT, status TEXT NOT NULL DEFAULT 'nova', anotacao TEXT,
     aluno_id INTEGER REFERENCES alunos(id) ON DELETE SET NULL
   );
+  `,
+  /* v4: comunicados e mensagens internas */
+  `
+  CREATE TABLE comunicados (
+    id INTEGER PRIMARY KEY, titulo TEXT NOT NULL, texto TEXT NOT NULL, publico TEXT NOT NULL DEFAULT 'todos',
+    fixado INTEGER NOT NULL DEFAULT 0, ate TEXT, autor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, autor TEXT,
+    criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE mensagens (
+    id INTEGER PRIMARY KEY, de_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, de_nome TEXT,
+    para_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    assunto TEXT NOT NULL, texto TEXT NOT NULL, resposta_a INTEGER, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    lida_em TEXT, apagada_de INTEGER NOT NULL DEFAULT 0, apagada_para INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX mensagens_para ON mensagens(para_id, apagada_para);
+  CREATE INDEX mensagens_de ON mensagens(de_id, apagada_de);
   `
 ];
 
