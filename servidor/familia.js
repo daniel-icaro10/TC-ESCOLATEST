@@ -60,7 +60,8 @@ function criarFamilia(db, { auth, catraca, financeiro }) {
     rota('PUT', '/api/familia/usuarios/:id', 'cadastros', ({ params, corpo, auditar }) => {
       const u = db.um("SELECT * FROM usuarios WHERE id = ? AND papel = 'familia'", valida.inteiro(params.id, 'Usuário', 1));
       if (!u) throw new ErroHttp('Acesso de família não encontrado.', 404);
-      const d = auth.dadosUsuario({ nome: corpo.nome ?? u.nome, login: corpo.login ?? u.login, senha: corpo.senha, papel: 'familia', permitirFamilia: true }, false, u.id);
+      auth.protegeDemo(u);
+      const d =auth.dadosUsuario({ nome: corpo.nome ?? u.nome, login: corpo.login ?? u.login, senha: corpo.senha, papel: 'familia', permitirFamilia: true }, false, u.id);
       const alunos = alunosValidos(corpo.alunos);
       const ativo = corpo.ativo === undefined ? u.ativo : (corpo.ativo ? 1 : 0);
       db.transacao(() => {

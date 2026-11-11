@@ -3,10 +3,11 @@
 const { ErroHttp, valida } = require('./http');
 
 const FORMAS = ['Dinheiro', 'PIX', 'Cartão de débito', 'Cartão de crédito', 'Boleto', 'Transferência'];
-/* aceita número (450.5) ou texto no formato brasileiro ("1.200,50" ou "450,5") */
+/* aceita número (450.5) ou texto no formato brasileiro ("1.200,50", "1.200" ou "450,5") */
 const dinheiro = (v, nome, min = 0) => {
   const s = String(v ?? '').trim().replace(/^R\$\s*/, '');
-  const n = typeof v === 'number' ? v : s.includes(',') ? Number(s.replace(/\./g, '').replace(',', '.')) : Number(s);
+  const milhar = /^\d{1,3}(\.\d{3})+$/.test(s);   // "1.200" é mil e duzentos, não 1,2
+  const n = typeof v === 'number' ? v : s.includes(',') || milhar ? Number(s.replace(/\./g, '').replace(',', '.')) : Number(s);
   if (!Number.isFinite(n) || n < min || n > 1e7) throw new ErroHttp(`${nome} inválido.`);
   return Math.round(n * 100) / 100;
 };
@@ -99,6 +100,8 @@ function criarFinanceiro(db) {
       const venc = valida.dataISO(corpo.vencimento, 'Vencimento', { obrigatorio: true });
       const desc = valida.texto(corpo.descricao, 'a descrição', { obrigatorio: true, max: 120 });
       const valor = dinheiro(corpo.valor, 'Valor', 0.01);
+      if (desc === 'Mensalidade' && db.um("SELECT 1 FROM cobrancas WHERE aluno_id = ? AND competencia = ? AND descricao = 'Mensalidade' AND cancelada = 0", a.id, venc.slice(0, 7)))
+        throw new ErroHttp('Este aluno já tem mensalidade neste mês. Use outra descrição ou altere a mensalidade que já existe.', 409);
       const id = db.rodar('INSERT INTO cobrancas (aluno_id, ano_letivo, competencia, descricao, valor, desconto, vencimento) VALUES (?, ?, ?, ?, ?, ?, ?)',
         a.id, Number(venc.slice(0, 4)), venc.slice(0, 7), desc, valor, dinheiro(corpo.desconto || 0, 'Desconto'), venc).id;
       auditar('lançou cobrança', `${desc} · ${a.nome} · R$ ${valor}`);

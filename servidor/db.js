@@ -198,6 +198,11 @@ const MIGRACOES = [
     aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
     PRIMARY KEY (usuario_id, aluno_id)
   );
+  `,
+  /* v8: o índice único vale só para as mensalidades geradas (cobranças avulsas podem repetir a descrição no mês) */
+  `
+  DROP INDEX cobrancas_mensalidade;
+  CREATE UNIQUE INDEX cobrancas_mensalidade ON cobrancas(aluno_id, competencia) WHERE cancelada = 0 AND descricao = 'Mensalidade';
   `
 ];
 

@@ -66,7 +66,8 @@ function criarAuth(db, { demo = false } = {}) {
     const agora = Date.now(), t = tentativas.get(chave);
     if (!t || t.ate < agora) tentativas.set(chave, { n: 1, ate: agora + 10 * 60000 });
     else t.n++;
-    if (tentativas.size > 5000) tentativas.clear();
+    // limpa só o que já venceu: zerar tudo deixaria um atacante "resetar" o bloqueio com logins inventados
+    if (tentativas.size > 5000) for (const [k, v] of tentativas) if (v.ate < agora) tentativas.delete(k);
   }
 
   function criarSessao(usuarioId) {
@@ -162,6 +163,7 @@ function criarAuth(db, { demo = false } = {}) {
       const id = valida.inteiro(params.id, 'Usuário', 1);
       const atual = db.um('SELECT * FROM usuarios WHERE id = ?', id);
       if (!atual) throw new ErroHttp('Usuário não encontrado.', 404);
+      protegeDemo(atual);
       const d = dadosUsuario({ ...corpo, login: corpo.login ?? atual.login }, false, id);
       const ativo = corpo.ativo === undefined ? atual.ativo : (corpo.ativo ? 1 : 0);
       if (id === usuario.id && (d.papel !== 'admin' || !ativo)) throw new ErroHttp('Você não pode tirar o seu próprio acesso de administrador.');
@@ -175,6 +177,9 @@ function criarAuth(db, { demo = false } = {}) {
     });
   }
 
+  function protegeDemo(u) {
+    if (demo && String(u.login).endsWith('.demo')) throw new ErroHttp('Na demonstração os usuários de teste não podem ser alterados. Crie outro usuário para testar.', 403);
+  }
   function validaLogin(v) {
     const login = String(v || '').trim().toLowerCase();
     if (!/^[a-z0-9._-]{3,40}$/.test(login)) throw new ErroHttp('O usuário precisa ter de 3 a 40 letras sem acento, números, ponto ou traço. Ex.: maria.souza');
@@ -213,7 +218,7 @@ function criarAuth(db, { demo = false } = {}) {
     if (prof && !db.um("SELECT 1 FROM usuarios WHERE login = 'professor.demo'")) db.rodar('INSERT INTO usuarios (nome, login, senha_hash, papel, professor_id) VALUES (?, ?, ?, ?, ?)', `${prof.nome} (demo)`, 'professor.demo', hashSenha('demo1234'), 'professor', prof.id);
   }
 
-  return { registrar, usuarioDaSessao, pode, COOKIE, usuariosDemo, validaLogin, dadosUsuario };
+  return { registrar, usuarioDaSessao, pode, COOKIE, usuariosDemo, validaLogin, dadosUsuario, protegeDemo };
 }
 
 module.exports = { criarAuth, PAPEIS, PERMISSOES, pode, hashSenha, confereSenha };

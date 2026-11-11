@@ -78,7 +78,7 @@ function criarEscola(db, ganchos = {}) {
     if (nascimento && nascimento > new Date().toISOString().slice(0, 10)) throw new ErroHttp('A data de nascimento não pode ser no futuro.');
     const cpf = c.cpf === undefined ? atual.cpf : String(c.cpf || '').replace(/\D/g, '');
     if (cpf && !cpfValido(cpf)) throw new ErroHttp('CPF inválido.');
-    const nome = c.nome === undefined ? atual.nome : valida.texto(c.nome, 'o nome do aluno', { obrigatorio: true, max: 150 });
+    const nome = c.nome === undefined && atual.nome ? atual.nome : valida.texto(c.nome, 'o nome do aluno', { obrigatorio: true, max: 150 });
     if (nome.split(' ').length < 2) throw new ErroHttp('Digite o nome completo do aluno.');
     const t = (campo, col, max) => c[campo] === undefined ? (atual[col] ?? null) : valida.texto(c[campo], campo, { max });
     return {
@@ -152,7 +152,10 @@ function criarEscola(db, ganchos = {}) {
       if (!!atual.consentimento_biometria !== d.consentimento) mudou.push(d.consentimento ? 'consentimento de biometria registrado' : 'consentimento de biometria retirado');
       auditar('alterou aluno', `${d.nome} (matrícula ${atual.matricula})${mudou.length ? ': ' + mudou.join(', ') : ''}`);
       // quem saiu da escola, ou retirou o consentimento, sai da catraca
-      const aviso = (!ATIVAS.includes(d.situacao) || !d.consentimento) && ganchos.alunoSaiu ? await ganchos.alunoSaiu(atual.matricula, d) : null;
+      // (só quando muda: salvar a ficha de quem nunca teve consentimento não deve mexer na catraca)
+      const saiu = ATIVAS.includes(atual.situacao || 'cursando') && !ATIVAS.includes(d.situacao);
+      const retirou = !!atual.consentimento_biometria && !d.consentimento;
+      const aviso = (saiu || retirou) && ganchos.alunoSaiu ?await ganchos.alunoSaiu(atual.matricula, d) : null;
       return { ok: true, aviso };
     });
 

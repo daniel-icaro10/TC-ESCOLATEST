@@ -133,9 +133,15 @@ function servirArquivo(req, res, caminhoUrl) {
 /* ---------------- API ---------------- */
 const MUTAVEIS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 function ipDe(req) {
-  // atrás do proxy do Render o IP real vem no cabeçalho; na escola não há proxy
-  if (cfg.modoDemo && req.headers['x-forwarded-for']) return String(req.headers['x-forwarded-for']).split(',')[0].trim();
-  return req.socket.remoteAddress || '';
+  // Atrás de um proxy o IP real vem no cabeçalho: no Render (modoDemo) e no túnel da Cloudflare, que entrega os
+  // pedidos pelo próprio computador (127.0.0.1). Pedidos diretos da rede da escola usam o IP da conexão.
+  const direto = req.socket.remoteAddress || '';
+  const local = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(direto);
+  if (!cfg.modoDemo && !local) return direto;
+  const cf = req.headers['cf-connecting-ip'], xff = req.headers['x-forwarded-for'];
+  if (cf) return String(cf).trim();
+  if (xff) return String(xff).split(',')[0].trim();
+  return direto;
 }
 
 async function tratarApi(req, res, url) {

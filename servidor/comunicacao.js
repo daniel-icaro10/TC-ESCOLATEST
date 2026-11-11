@@ -14,9 +14,11 @@ const vePublico = (usuario, publico) => usuario.papel === 'familia' ? ['familias
 function criarComunicacao(db) {
   function registrar(rota) {
     /* ----- comunicados ----- */
-    rota('GET', '/api/comunicados', 'logado', ({ usuario }) => db.todos(`SELECT id, titulo, texto, publico, fixado, ate, autor, criado_em criadoEm FROM comunicados
+    // os comunicados que este usuário enxerga (o aviso de "novo" no topo usa a mesma lista)
+    const visiveis = usuario => db.todos(`SELECT id, titulo, texto, publico, fixado, ate, autor, criado_em criadoEm FROM comunicados
       WHERE ate IS NULL OR ate >= date('now', 'localtime') OR ? ORDER BY fixado DESC, id DESC LIMIT 200`, pode(usuario, 'comunicados'))
-      .filter(c => vePublico(usuario, c.publico)).map(c => ({ ...c, fixado: !!c.fixado, vencido: !!(c.ate && c.ate < new Date().toISOString().slice(0, 10)) })));
+      .filter(c => vePublico(usuario, c.publico));
+    rota('GET', '/api/comunicados', 'logado', ({ usuario }) => visiveis(usuario).map(c => ({ ...c, fixado: !!c.fixado, vencido: !!(c.ate && c.ate < new Date().toISOString().slice(0, 10)) })));
     const dadosComunicado = c => {
       if (!PUBLICOS[c.publico]) throw new ErroHttp('Escolha para quem é o comunicado.');
       return { titulo: valida.texto(c.titulo, 'o título', { obrigatorio: true, max: 150 }), texto: String(c.texto || '').trim().slice(0, 5000) || (() => { throw new ErroHttp('Escreva o comunicado.'); })(),
@@ -50,7 +52,7 @@ function criarComunicacao(db) {
       .map(u => ({ ...u, papelNome: PAPEIS[u.papel] })));
     rota('GET', '/api/mensagens/nao-lidas', 'logado', ({ usuario }) => ({
       mensagens: db.um('SELECT COUNT(*) n FROM mensagens WHERE para_id = ? AND lida_em IS NULL AND apagada_para = 0', usuario.id).n,
-      ultimoComunicado: (db.um('SELECT MAX(id) m FROM comunicados') || {}).m || 0
+      ultimoComunicado: Math.max(0, ...visiveis(usuario).map(c => c.id))
     }));
     rota('GET', '/api/mensagens', 'mensagens', ({ usuario, url }) => {
       const pasta = url.searchParams.get('pasta') === 'enviadas' ? 'enviadas' : 'entrada';

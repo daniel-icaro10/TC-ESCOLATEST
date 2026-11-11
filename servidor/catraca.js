@@ -150,6 +150,10 @@ function criarCatraca(db, { inicial = null, modoDemo = false, auditarSistema = (
         if (!outro || outro.registration !== String(mat)) throw new ErroHttp(`Este cartão já pertence a ${outro ? outro.name : 'outro usuário'} na catraca.`, 409);
       }
     }
+    // confere a foto também antes: um erro no meio deixaria a catraca e o cadastro da escola diferentes
+    const img = d.foto ? Buffer.from(String(d.foto).replace(/^data:image\/\w+;base64,/, ''), 'base64') : null;
+    if (img && !img.length) throw new ErroHttp('A foto veio vazia. Tire outra foto.', 400);
+    if (img && img.length > 1024 * 1024) throw new ErroHttp('A foto passou de 1 MB. Tire outra foto ou use uma imagem menor.', 400);
 
     const nome = a.nome.slice(0, 120);
     let u = await usuarioPorMatricula(mat);
@@ -162,37 +166,37 @@ function criarCatraca(db, { inicial = null, modoDemo = false, auditarSistema = (
     }
     await garantirGrupo(u.id, avisos);
     const res = { userId: u.id, avisos };
-
-    if (d.senha) {
-      const h = await api('user_hash_password.fcgi', { password: String(d.senha) });
-      await alterar('users', { password: h.password, salt: h.salt }, { id: u.id });
-      res.senha = true;
-    } else if (d.removerSenha) {
-      await alterar('users', { password: '', salt: '' }, { id: u.id });
-      res.senha = false;
+    try {
+      if (d.senha) {
+        const h = await api('user_hash_password.fcgi', { password: String(d.senha) });
+        await alterar('users', { password: h.password, salt: h.salt }, { id: u.id });
+        res.senha = true;
+      } else if (d.removerSenha) {
+        await alterar('users', { password: '', salt: '' }, { id: u.id });
+        res.senha = false;
+      }
+      if (trocarCartao) {
+        await apagar('cards', { user_id: u.id });
+        if (valor !== null) await criar('cards', [{ value: valor, user_id: u.id }]);
+        res.cartao = valor === null ? null : cartaoLegivel(valor);
+      }
+      if (img) {
+        const r = await api('user_set_image.fcgi', img, {
+          query: { user_id: u.id, timestamp: Math.floor(Date.now() / 1000), match: 1 },
+          tipo: 'application/octet-stream', timeout: 30000
+        });
+        // alguns firmwares devolvem o resultado da análise, outros não devolvem nada
+        if (r && r.success === false) res.foto = { ok: false, erros: (r.errors || []).map(e => MSG_FACE[e.code] || e.message || 'Foto recusada pela catraca.') };
+        else res.foto = { ok: true };
+      }
+    } finally {
+      // guarda o que já foi feito na catraca, mesmo que um passo seguinte tenha falhado (ex.: caiu a rede no envio da foto)
+      const parcial = {};
+      if (res.senha !== undefined) parcial.senha = res.senha;
+      if (res.cartao !== undefined) parcial.cartao = res.cartao;
+      if (res.foto && res.foto.ok) parcial.facial = true;
+      lembrar(mat, parcial);
     }
-    if (trocarCartao) {
-      await apagar('cards', { user_id: u.id });
-      if (valor !== null) await criar('cards', [{ value: valor, user_id: u.id }]);
-      res.cartao = valor === null ? null : cartaoLegivel(valor);
-    }
-    if (d.foto) {
-      const base64 = String(d.foto).replace(/^data:image\/\w+;base64,/, '');
-      const img = Buffer.from(base64, 'base64');
-      if (img.length > 1024 * 1024) throw new ErroHttp('A foto passou de 1 MB. Tire outra foto ou use uma imagem menor.', 400);
-      const r = await api('user_set_image.fcgi', img, {
-        query: { user_id: u.id, timestamp: Math.floor(Date.now() / 1000), match: 1 },
-        tipo: 'application/octet-stream', timeout: 30000
-      });
-      // alguns firmwares devolvem o resultado da análise, outros não devolvem nada
-      if (r && r.success === false) res.foto = { ok: false, erros: (r.errors || []).map(e => MSG_FACE[e.code] || e.message || 'Foto recusada pela catraca.') };
-      else res.foto = { ok: true };
-    }
-    const parcial = {};
-    if (res.senha !== undefined) parcial.senha = res.senha;
-    if (res.cartao !== undefined) parcial.cartao = res.cartao;
-    if (res.foto && res.foto.ok) parcial.facial = true;
-    lembrar(mat, parcial);
     return res;
   }
 
@@ -266,9 +270,11 @@ function criarCatraca(db, { inicial = null, modoDemo = false, auditarSistema = (
     return { ok: true, giro };
   }
 
-  async function acessos(desde, ate, limite) {
+  /* limite: quantos registros devolver (os mais recentes); userId: só os acessos de um usuário da catraca */
+  async function acessos(desde, ate, limite = Infinity, userId = null) {
     const where = [{ object: 'access_logs', field: 'time', operator: '>=', value: desde }];
     if (ate) where.push({ object: 'access_logs', field: 'time', operator: '<', value: ate });
+    if (userId) where.push({ object: 'access_logs', field: 'user_id', operator: '=', value: Number(userId) });
     const [logs, users] = await Promise.all([carregar('access_logs', { where }), carregar('users', { fields: ['id', 'name', 'registration'] }).catch(() => carregar('users'))]);
     const porId = new Map(users.map(u => [Number(u.id), u]));
     return logs.sort((a, b) => b.time - a.time || b.id - a.id).slice(0, limite).map(l => {
@@ -366,7 +372,8 @@ function criarCatraca(db, { inicial = null, modoDemo = false, auditarSistema = (
       if (data) { valida.dataISO(data, 'Data'); inicio = new Date(data + 'T00:00:00'); }
       else { inicio = new Date(); inicio.setHours(0, 0, 0, 0); }
       const desde = Math.floor(inicio / 1000), ate = desde + 86400;
-      const limite = Math.max(1, Math.min(2000, Math.floor(Number(url.searchParams.get('limite'))) || 200));
+      // um dia inteiro cabe (escola grande passa de alguns milhares de registros por dia); a tela corta o que mostra
+      const limite = Math.max(1, Math.min(50000, Math.floor(Number(url.searchParams.get('limite'))) || 200));
       return acessos(desde, ate, limite);
     });
   }
@@ -390,7 +397,9 @@ function criarCatraca(db, { inicial = null, modoDemo = false, auditarSistema = (
   async function acessosAluno(mat, dias = 7) {
     if (!configurada()) return [];
     const inicio = new Date(); inicio.setHours(0, 0, 0, 0); inicio.setDate(inicio.getDate() - (dias - 1));
-    return (await acessos(Math.floor(inicio / 1000), null, 5000)).filter(l => String(l.matricula) === String(mat) && [7, 10, 11, 12, 15].includes(l.evento));
+    const u = await usuarioPorMatricula(mat);
+    if (!u) return [];
+    return (await acessos(Math.floor(inicio / 1000), null, Infinity, u.id)).filter(l =>[7, 10, 11, 12, 15].includes(l.evento));
   }
 
   return { registrar, alunoSaiu, configPublica, acessosAluno };

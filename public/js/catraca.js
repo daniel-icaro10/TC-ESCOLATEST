@@ -104,7 +104,7 @@ tela('catraca-acessos', 'catraca.acessos', () => {
   const pill = ev => ev === 7 ? 'ok' : [10, 11, 12, 15].includes(ev) ? 'doing' : [6, 3, 2, 5].includes(ev) ? 'bad' : 'todo';
   const carregar = () => {
     const dia = $('aData') ? $('aData').value : hojeISO(), hoje = dia === hojeISO();
-    return api(`catraca/acessos?limite=500${hoje ? '' : '&data=' + dia}`).then(lista => {
+    return api(`catraca/acessos?limite=50000${hoje ? '' : '&data=' + dia}`).then(lista => {
       if (!$('kpis')) return;
       $('tAcessos').textContent = hoje ? 'Acessos de hoje' : `Acessos de ${dataBR(dia)}`;
       $('kpis').parentElement.hidden = false;
@@ -116,7 +116,8 @@ tela('catraca-acessos', 'catraca.acessos', () => {
         <div class="kpi"><span>Alunos que passaram</span><b>${alunosDia.size}${ativos ? html`<small class="muted" style="font-size:.8rem;font-weight:600"> de ${ativos}</small>` : ''}</b></div>
         <div class="kpi"><span>Negados</span><b style="${negados.length ? 'color:var(--red)' : ''}">${negados.length}</b></div>
         <div class="kpi"><span>Último acesso</span><b>${lista[0] ? hora(lista[0].hora).slice(0, 5) : '–'}</b></div>`;
-      $('rows').innerHTML = html`${lista.length ? lista.map(l => {
+      // os totais acima contam o dia inteiro; a tabela mostra os 300 mais recentes para não pesar
+      $('rows').innerHTML = html`${lista.length ? lista.slice(0, 300).map(l => {
         const a = alunoPorMat(l.matricula);
         return html`<tr><td class="num">${hora(l.hora)}</td>
           <td style="font-weight:700;text-transform:uppercase;font-size:.86rem">${a ? a.nome : l.nome ? l.nome : html`<span class="muted" style="text-transform:none;font-weight:400">Não identificado</span>`}</td>
@@ -153,7 +154,7 @@ tela('catraca-presenca', 'catraca.acessos', () => {
     if (!t) { $('rows').innerHTML = html`${linhaVazia(4, 'Nenhuma turma.')}`; return; }
     $('rows').innerHTML = html`${linhaVazia(4, 'Consultando a catraca…')}`;
     try {
-      const l = await api(`catraca/acessos?limite=2000${dia === hojeISO() ? '' : '&data=' + dia}`);
+      const l = await api(`catraca/acessos?limite=50000${dia === hojeISO() ? '' : '&data=' + dia}`);
       const passou = new Map();
       l.filter(x => [7, 10, 11, 12, 15].includes(x.evento) && x.matricula).forEach(x => { const p = passou.get(String(x.matricula)) || []; p.push(x.hora); passou.set(String(x.matricula), p); });
       const alunos = t.alunos.filter(ATIVO);
