@@ -156,7 +156,9 @@ const TUTORIAIS = [
     'Em <b>Configurações &gt; Usuários</b>, crie um usuário para cada pessoa da secretaria, coordenação, portaria e financeiro. Para professores, cadastre o professor primeiro em <b>Secretaria &gt; Cadastro &gt; Professores</b> e depois crie o usuário do tipo Professor ligado a ele.',
     'Cadastre as turmas em <b>Secretaria &gt; Turmas &gt; Lista de turmas</b>, ou importe os alunos por planilha, que cria as turmas sozinha.',
     'Em <b>Controle de acesso &gt; Conexão com a catraca</b>, preencha o IP, o usuário e a senha da catraca e teste a conexão.',
-    'Combine com alguém da escola de copiar a pasta <code class="k">servidor/dados/backups</code> para um pendrive ou para a nuvem toda semana.'] },
+    'No computador do servidor, rode <code class="k">servidor/iniciar-com-windows.bat</code> uma vez: o sistema passa a abrir sozinho quando o computador liga.',
+    'Cadastre o contato do suporte técnico em <b>Central de ajuda &gt; Falar com o suporte &gt; Editar</b>.',
+    'Combine com alguém da escola de baixar o backup toda semana (veja o tutorial Backup).'] },
   { perm: 'cadastros', titulo: 'Importar os alunos de uma planilha', passos: [
     'No sistema antigo ou no Excel, salve a lista de alunos como <b>CSV</b> (Arquivo &gt; Salvar como &gt; CSV).',
     'Abra <b>Secretaria &gt; Cadastro &gt; Importar planilha</b> e escolha o arquivo. Se quiser, baixe a planilha modelo para ver o formato.',
@@ -185,6 +187,18 @@ const TUTORIAIS = [
     'Em <b>Secretaria &gt; Matrículas &gt; Rematrículas</b>, clique em <b>Copiar turmas</b> para criar as turmas do ano seguinte com os mesmos professores.',
     'Escolha cada turma, confira a turma de destino sugerida para cada aluno e clique em <b>Rematricular marcados</b>.',
     'Por último, em <b>Configurações</b>, mude o ano letivo para o novo ano. As notas do ano anterior ficam no Histórico escolar.'] },
+  { perm: 'cadastros', titulo: 'Dar acesso ao portal para uma família', passos: [
+    'Abra <b>Ambiente do aluno &gt; Portal do aluno</b> e clique em <b>+ Criar acesso para família</b>.',
+    'Escolha o responsável já cadastrado: o nome, o usuário e os irmãos são preenchidos sozinhos. Confira os alunos marcados.',
+    'Salve e entregue a ficha com endereço, usuário e senha ao responsável. Peça para trocar a senha no primeiro acesso.',
+    'O que a família vê (boletim, catraca e mensalidades) é escolhido em <b>Ambiente do aluno &gt; Aplicativo da família</b>.'] },
+  { perm: 'catraca.acessos', titulo: 'Ver quem veio à aula (presença pela catraca)', passos: [
+    'Abra <b>Controle de acesso &gt; Presença por turma</b>, escolha a turma e o dia.',
+    'Aparece a hora de entrada de cada aluno e quem não passou pela catraca. Clique em Imprimir para levar a lista.'] },
+  { perm: 'config', titulo: 'Backup (cópia de segurança)', passos: [
+    'O servidor faz uma cópia sozinho todo dia, mas ela fica no mesmo computador.',
+    'Toda semana, abra <b>Configurações</b> e clique em <b>Baixar backup agora</b>. Guarde o arquivo num pendrive ou na nuvem, em lugar seguro: ele tem dados pessoais.',
+    'Para restaurar um backup, siga o README do sistema ou chame o suporte técnico.'] },
   { perm: 'logado', titulo: 'Trocar a minha senha', passos: ['Abra <b>Minha conta</b> no menu, digite a senha atual e a nova duas vezes. A senha precisa ter 8 caracteres, com letras e números.'] }
 ];
 tela('tutoriais', null, () => {

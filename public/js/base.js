@@ -245,7 +245,7 @@ const MENU = [
     { label: 'Matrículas', icon: 'idcard', perm: 'matriculas', children: [{ id: 'matriculas', label: 'Matrículas' }, { id: 'rematriculas', label: 'Rematrículas' }, { id: 'pre-matricula', label: 'Pré-matrícula' }] }
   ] },
   { label: 'Controle de acesso', icon: 'face', perm: ['catraca', 'catraca.acessos', 'catraca.config'], children: [
-    { id: 'catraca-cadastro', label: 'Cadastro facial', perm: 'catraca' }, { id: 'catraca-acessos', label: 'Liberação e acessos', perm: 'catraca.acessos' },
+    { id: 'catraca-cadastro', label: 'Cadastro facial', perm: 'catraca' }, { id: 'catraca-acessos', label: 'Liberação e acessos', perm: 'catraca.acessos' }, { id: 'catraca-presenca', label: 'Presença por turma', perm: 'catraca.acessos' },
     { id: 'catraca-config', label: 'Conexão com a catraca', perm: 'catraca.config' }] },
   { label: 'Pedagógico', icon: 'cap', perm: ['pedagogico', 'pedagogico.ver', 'pedagogico.proprio', 'notas.proprias'], children: [
     { label: 'Professor', icon: 'coffee', perm: ['notas.proprias', 'pedagogico.proprio'], children: [{ id: 'meus-diarios', label: 'Meus diários', perm: 'notas.proprias' }, { id: 'planejamento', label: 'Planejamento de aulas', perm: 'pedagogico.proprio' },

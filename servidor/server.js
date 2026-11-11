@@ -86,6 +86,18 @@ const financeiro = criarFinanceiro(db);
 financeiro.registrar(roteador.rota);
 criarFamilia(db, { auth, catraca, financeiro }).registrar(roteador.rota);
 
+/* download do backup pelo portal (administrador): uma cópia consistente do banco, feita na hora */
+roteador.rota('GET', '/api/backup', 'config', ({ res, auditar }) => {
+  const tmp = path.join(require('os').tmpdir(), `portal-backup-${process.pid}-${Date.now()}.db`);
+  try {
+    db.exec(`VACUUM INTO '${tmp.replace(/'/g, "''")}'`);
+    const dados = fs.readFileSync(tmp);
+    auditar('baixou o backup do banco');
+    res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="escola-${new Date().toISOString().slice(0, 10)}.db"`, 'Cache-Control': 'no-store', ...CABECALHOS_SEGURANCA });
+    res.end(dados);
+  } finally { fs.rmSync(tmp, { force: true }); }
+});
+
 /* backup diário do banco (guarda os últimos 30 dias) */
 function fazerBackup() {
   try { const f = db.backup(path.join(path.dirname(ARQ_BANCO), 'backups')); if (f) console.log(new Date().toLocaleString('pt-BR'), 'backup do banco:', f); }
@@ -154,6 +166,7 @@ async function tratarApi(req, res, url) {
 
   const corpo = MUTAVEIS.has(req.method) && req.method !== 'DELETE' ? await lerCorpo(req) : {};
   const dados = await rota.fn({ req, res, url, params, corpo, usuario, token, ip: ipDe(req), auditar: (acao, detalhe) => auditar(usuario, acao, detalhe) });
+  if (res.headersSent) return;   // a rota já respondeu (ex.: download do backup)
   responder(res, 200, dados);
 }
 

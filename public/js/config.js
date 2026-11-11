@@ -35,6 +35,15 @@ tela('config', 'config', () => {
         <div class="full" id="escRes" role="status"></div>
       </div>
       <div style="display:flex;justify-content:flex-end"><button class="btn blue" type="submit">Salvar</button></div></form>
+    </section>
+    <section class="panel">
+      <div class="panel-h">${ic('download')}<h2>Backup</h2></div>
+      <div style="padding:16px 22px 20px;display:flex;flex-direction:column;gap:12px">
+        <p style="margin:0">O servidor guarda sozinho uma cópia do banco por dia (os últimos 30 dias) na pasta <code class="k">servidor/dados/backups</code> do computador do sistema.
+          Mesmo assim, <b>leve uma cópia para fora desse computador toda semana</b> (pendrive ou nuvem): se o computador quebrar ou for roubado, é com ela que os dados voltam.</p>
+        <a class="btn blue" href="/api/backup" download style="align-self:flex-start">${ic('download')} Baixar backup agora</a>
+        <p class="muted" style="margin:0;font-size:.84rem">O arquivo tem dados pessoais de alunos e famílias (LGPD): guarde em lugar seguro. Para restaurar, veja o README.</p>
+      </div>
     </section>`;
   $('escForm').onsubmit = async ev => {
     ev.preventDefault();

@@ -136,6 +136,42 @@ tela('catraca-acessos', 'catraca.acessos', () => {
   const poll = setInterval(() => { if ($('aData') && $('aData').value === hojeISO()) carregar(); }, 10000);
   aoSairDaTela.push(() => clearInterval(poll));
 });
+/* presença por turma: quem passou pela catraca no dia e quem não passou */
+tela('catraca-presenca', 'catraca.acessos', () => {
+  const turmas = TURMAS.filter(t => t.anoLetivo === SESSAO.escola.anoLetivo);
+  view.innerHTML = html`
+    <div class="page-title"><div><div class="crumb">Controle de acesso</div><h1>Presença por turma</h1></div><button class="btn" data-act="imprimir">${ic('print')} Imprimir</button></div>
+    <section class="panel no-print"><div class="filters">
+      <label class="field" for="prTurma">Turma<select id="prTurma">${turmas.map(t => html`<option value="${t.id}">${t.nome}</option>`)}</select></label>
+      <label class="field" for="prDia">Dia<input id="prDia" type="date" value="${hojeISO()}" max="${hojeISO()}"></label>
+    </div></section>
+    <section class="panel"><div class="kpis" id="prKpis"></div></section>
+    <section class="panel"><div class="so-impressao" id="prTitulo"></div><div class="table-wrap"><table class="t"><thead><tr><th>Nº</th><th>Aluno</th><th>Entrada</th><th>Última passagem</th></tr></thead><tbody id="rows">${linhaVazia(4, 'Carregando…')}</tbody></table></div></section>
+    <p class="muted" style="font-size:.84rem">Conta como presente quem passou pela catraca no dia (por rosto, cartão, senha ou liberado pela escola). Não substitui a chamada do professor.</p>`;
+  const carregar = async () => {
+    const t = turmaDe($('prTurma').value), dia = $('prDia').value;
+    if (!t) { $('rows').innerHTML = html`${linhaVazia(4, 'Nenhuma turma.')}`; return; }
+    $('rows').innerHTML = html`${linhaVazia(4, 'Consultando a catraca…')}`;
+    try {
+      const l = await api(`catraca/acessos?limite=2000${dia === hojeISO() ? '' : '&data=' + dia}`);
+      const passou = new Map();
+      l.filter(x => [7, 10, 11, 12, 15].includes(x.evento) && x.matricula).forEach(x => { const p = passou.get(String(x.matricula)) || []; p.push(x.hora); passou.set(String(x.matricula), p); });
+      const alunos = t.alunos.filter(ATIVO);
+      const presentes = alunos.filter(a => passou.has(String(a.mat)));
+      $('prTitulo').innerHTML = html`<b>${SESSAO.escola.nome}</b> · Presença pela catraca · ${t.nome} · ${dataBR(dia)}`;
+      $('prKpis').innerHTML = html`<div class="kpi"><span>Alunos</span><b>${alunos.length}</b></div><div class="kpi"><span>Presentes</span><b style="color:var(--green)">${presentes.length}</b></div>
+        <div class="kpi"><span>Não passaram</span><b style="${alunos.length - presentes.length ? 'color:var(--red)' : ''}">${alunos.length - presentes.length}</b></div><div class="kpi"><span>Presença</span><b>${alunos.length ? Math.round(presentes.length / alunos.length * 100) : 0}%</b></div>`;
+      $('rows').innerHTML = html`${alunos.length ? alunos.map((a, i) => { const h = (passou.get(String(a.mat)) || []).sort((x, y) => x - y); return html`<tr>
+        <td class="num muted">${String(i + 1).padStart(2, '0')}</td><td style="font-weight:700">${a.nome}</td>
+        <td>${h.length ? html`<span class="pill ok">${hora(h[0]).slice(0, 5)}</span>` : html`<span class="pill bad">Não passou</span>`}</td><td class="num muted">${h.length > 1 ? hora(h[h.length - 1]).slice(0, 5) : ''}</td></tr>`; })
+        : linhaVazia(4, 'Nenhum aluno ativo na turma.')}`;
+    } catch (e) { $('rows').innerHTML = html`<tr><td colspan="4"><p class="res bad">${e.message}</p></td></tr>`; }
+  };
+  if (!turmas.length) { $('rows').innerHTML = html`${linhaVazia(4, 'Nenhuma turma no ano letivo.')}`; return; }
+  $('prTurma').onchange = carregar; $('prDia').onchange = carregar;
+  carregar();
+});
+
 acao('liberar', async el => {
   const sentido = el.dataset.sentido, bts = document.querySelectorAll('[data-act="liberar"]');
   bts.forEach(b => b.disabled = true);
