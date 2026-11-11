@@ -342,17 +342,30 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLayer(); document.body.classList.remove('nav-open'); } });
 
 /* ---------- login ---------- */
-const logoSvg = seguro('<svg viewBox="0 0 42 42" aria-hidden="true" style="width:42px;height:42px"><circle cx="21" cy="21" r="20" fill="#e7f1fd"/><circle cx="21" cy="21" r="13" fill="none" stroke="#3d8fe6" stroke-width="2"/><path d="M8 21h26M21 8c-5 4-5 22 0 26M21 8c5 4 5 22 0 26" fill="none" stroke="#3d8fe6" stroke-width="1.6"/></svg>');
+const logoSvg = seguro('<svg viewBox="0 0 42 42" aria-hidden="true" style="width:42px;height:42px"><circle cx="21" cy="21" r="20" fill="#e7f1fd"/><circle cx="21" cy="21" r="13" fill="none" stroke="#2f74e0" stroke-width="2"/><path d="M8 21h26M21 8c-5 4-5 22 0 26M21 8c5 4 5 22 0 26" fill="none" stroke="#2f74e0" stroke-width="1.6"/></svg>');
 
 function mostrarLogin(aviso) {
   SESSAO.usuario = null;
   closeLayer();
   $('app').hidden = true; $('carregando').hidden = true;
   const box = $('entrar'); box.hidden = false;
-  box.innerHTML = html`
+  const nomeEscola = SESSAO.escola.nome || 'Portal escolar';
+  box.innerHTML = html`<div class="entrar-wrap">
+    <aside class="entrar-arte" aria-hidden="true">
+      <div class="logo">${logoSvg}<div><b>${nomeEscola}</b><small>Sistema de gestão escolar</small></div></div>
+      <h2>Tudo da escola em um só lugar</h2>
+      <p>Secretaria, professores, portaria, financeiro e famílias usando o mesmo sistema.</p>
+      <ul>
+        <li>${ic('cap')} Notas, diários e boletins</li>
+        <li>${ic('unlock')} Entrada e saída pela catraca</li>
+        <li>${ic('dollar')} Mensalidades e recibos</li>
+        <li>${ic('users')} Portal para as famílias</li>
+      </ul>
+    </aside>
     <form class="entrar-box" id="loginForm" novalidate>
-      <div class="logo">${logoSvg}<div><b>${SESSAO.escola.nome || 'Portal escolar'}</b><small>Sistema de gestão escolar</small></div></div>
+      <div class="logo">${logoSvg}<div><b>${nomeEscola}</b><small>Sistema de gestão escolar</small></div></div>
       <h1>Entrar no sistema</h1>
+      <p class="sub-login">Use o usuário e a senha que a escola forneceu.</p>
       ${aviso ? html`<p class="res info">${aviso}</p>` : ''}
       <label class="field" for="lLogin">Usuário<input id="lLogin" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
       <label class="field" for="lSenha">Senha<input id="lSenha" type="password" autocomplete="current-password" required></label>
@@ -360,7 +373,7 @@ function mostrarLogin(aviso) {
       <button class="btn blue" type="submit">Entrar</button>
       ${SESSAO.demo ? html`<div class="demo-users"><b>Demonstração.</b> Entre com um dos usuários de teste (senha <b>demo1234</b>):<br>
         ${['admin', 'secretaria', 'coordenacao', 'professor', 'portaria', 'financeiro', 'familia'].map((u, i) => html`${i ? ' · ' : ''}<button type="button" data-demo="${u}.demo">${u}.demo</button>`)}</div>` : html`<p>Esqueceu a senha? Peça ao administrador do sistema para criar uma nova.</p>`}
-    </form>`;
+    </form></div>`;
   box.querySelectorAll('[data-demo]').forEach(b => b.onclick = () => { $('lLogin').value = b.dataset.demo; $('lSenha').value = 'demo1234'; $('loginForm').requestSubmit(); });
   $('lLogin').focus();
   $('loginForm').onsubmit = async e => {
