@@ -171,7 +171,7 @@ function openForm({ title, sub, fields, values = {}, submit = 'Salvar', note, on
     <div class="overlay" data-close>
       <form class="modal" id="cadForm" role="dialog" aria-modal="true" aria-labelledby="fT" novalidate style="width:min(${largura}px,100%)">
         <div class="modal-h"><div><h2 id="fT">${title}</h2>${sub ? html`<p>${sub}</p>` : ''}</div><button type="button" class="x" data-close aria-label="Fechar">${ic('x')}</button></div>
-        <div class="modal-b"><div class="form-grid">${fields.map(f => campoHTML(f, values[f.name]))}${note ? html`<p class="form-note">${note}</p>` : ''}<div class="form-erro" id="formErro" role="alert"></div></div></div>
+        <div class="modal-b"><div class="form-grid">${fields.map(f => campoHTML(f, values[f.name]))}${note ? html`<div class="form-note">${note}</div>` : ''}<div class="form-erro" id="formErro" role="alert"></div></div></div>
         <div class="modal-f">${extraBotoes || ''}<button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn blue" id="formOk">${submit}</button></div>
       </form>
     </div>`;

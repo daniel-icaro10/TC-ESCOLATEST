@@ -23,8 +23,9 @@ function criarEscola(db, ganchos = {}) {
       consentimento_biometria AS consentimentoBiometria, consentimento_em AS consentimentoEm FROM alunos ORDER BY nome`);
     let professores = db.todos('SELECT id, nome, email, tel, ativo FROM professores ORDER BY nome');
     let responsaveis = db.todos('SELECT id, aluno_id AS alunoId, nome, parentesco, tel, email, cpf FROM responsaveis ORDER BY nome');
-    let notas = db.todos('SELECT aluno_id a, disciplina_id d, bimestre b, at, tbl, te, pr, rp FROM notas').map(n => [n.a, n.d, n.b, n.at, n.tbl, n.te, n.pr, n.rp]);
-    let faltas = db.todos('SELECT aluno_id a, disciplina_id d, bimestre b, qtd FROM faltas WHERE qtd > 0').map(f => [f.a, f.d, f.b, f.qtd]);
+    // só as notas do ano da turma atual de cada aluno; anos anteriores ficam no histórico escolar
+    let notas = db.todos('SELECT n.aluno_id a, n.disciplina_id d, n.bimestre b, n.at, n.tbl, n.te, n.pr, n.rp FROM notas n JOIN alunos al ON al.id = n.aluno_id JOIN turmas t ON t.id = al.turma_id WHERE n.ano_letivo = t.ano_letivo').map(n => [n.a, n.d, n.b, n.at, n.tbl, n.te, n.pr, n.rp]);
+    let faltas = db.todos('SELECT f.aluno_id a, f.disciplina_id d, f.bimestre b, f.qtd FROM faltas f JOIN alunos al ON al.id = f.aluno_id JOIN turmas t ON t.id = al.turma_id WHERE f.ano_letivo = t.ano_letivo AND f.qtd > 0').map(f => [f.a, f.d, f.b, f.qtd]);
 
     const porTurma = new Map();
     vinculos.forEach(v => { if (!porTurma.has(v.turmaId)) porTurma.set(v.turmaId, []); porTurma.get(v.turmaId).push({ disciplinaId: v.disciplinaId, professorId: v.professorId, entregue: !!v.entregue }); });
@@ -89,6 +90,14 @@ function criarEscola(db, ganchos = {}) {
     if (nome.split(' ').length < 2) throw new ErroHttp('Digite o nome completo do professor.');
     return { nome, email: valida.email(c.email), tel: valida.telefone(c.tel), ativo: c.ativo === undefined ? 1 : (c.ativo ? 1 : 0) };
   }
+  /* mantém o registro de matrícula do ano da turma atual igual ao cadastro do aluno */
+  function sincronizarMatricula(alunoId) {
+    const a = db.um('SELECT a.id, a.situacao, t.id tid, t.ano_letivo ano, t.nome, t.serie FROM alunos a JOIN turmas t ON t.id = a.turma_id WHERE a.id = ?', alunoId);
+    if (!a) return;
+    db.rodar(`INSERT INTO matriculas (aluno_id, ano_letivo, turma_id, turma_nome, serie, situacao) VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(aluno_id, ano_letivo) DO UPDATE SET turma_id = excluded.turma_id, turma_nome = excluded.turma_nome, serie = excluded.serie, situacao = excluded.situacao`,
+      a.id, a.ano, a.tid, a.nome, a.serie, a.situacao);
+  }
   const proximaMatricula = () => {
     const ano = db.config('escola', {}).anoLetivo || new Date().getFullYear();
     const m = db.um('SELECT MAX(matricula) m FROM alunos').m;
@@ -112,6 +121,7 @@ function criarEscola(db, ganchos = {}) {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, matricula, d.nome, d.nascimento, d.turmaId, d.situacao, d.sexo, d.cpf, d.naturalidade, d.endereco, d.observacoes,
           d.consentimento, d.consentimento ? new Date().toISOString() : null).id;
         if (r) db.rodar('INSERT INTO responsaveis (aluno_id, nome, parentesco, tel, email, cpf) VALUES (?, ?, ?, ?, ?, ?)', id, r.nome, r.parentesco, r.tel, r.email, r.cpf);
+        sincronizarMatricula(id);
         auditar('matriculou aluno', `${d.nome} (matrícula ${matricula})`);
         return { id, matricula };
       });
@@ -124,6 +134,7 @@ function criarEscola(db, ganchos = {}) {
       db.rodar(`UPDATE alunos SET nome = ?, nascimento = ?, turma_id = ?, situacao = ?, sexo = ?, cpf = ?, naturalidade = ?, endereco = ?, observacoes = ?,
         consentimento_biometria = ?, consentimento_em = ? WHERE id = ?`, d.nome, d.nascimento, d.turmaId, d.situacao, d.sexo, d.cpf, d.naturalidade, d.endereco,
         d.observacoes, d.consentimento, consentimentoEm, atual.id);
+      sincronizarMatricula(atual.id);
       const mudou = [];
       if (atual.situacao !== d.situacao) mudou.push(`situação: ${d.situacao}`);
       if (atual.turma_id !== d.turmaId) mudou.push('turma');
@@ -221,6 +232,7 @@ function criarEscola(db, ganchos = {}) {
       const t = dadosTurma(corpo, atual);
       db.transacao(() => {
         db.rodar('UPDATE turmas SET ano_letivo = ?, serie = ?, nome = ?, turno = ?, nivel = ?, criterio = ? WHERE id = ?', t.anoLetivo, t.serie, t.nome, t.turno, t.nivel, t.criterio, atual.id);
+        db.rodar('UPDATE matriculas SET turma_nome = ?, serie = ? WHERE turma_id = ?', t.nome, t.serie, atual.id);
         if (corpo.finalizada !== undefined) db.rodar('UPDATE turmas SET finalizada = ? WHERE id = ?', !!corpo.finalizada, atual.id);
         // professores por disciplina: [{ disciplinaId, professorId }]
         (Array.isArray(corpo.vinculos) ? corpo.vinculos : []).forEach(v => {
@@ -306,12 +318,12 @@ function criarEscola(db, ganchos = {}) {
         const aid = valida.inteiro(l.alunoId, 'Aluno', 1);
         if (!daTurma.has(aid)) throw new ErroHttp('Aluno não pertence à turma.');
         const n = ['at', 'tbl', 'te', 'pr', 'rp'].map(k => valida.nota(l[k], k.toUpperCase()));
-        if (n.every(x => x === null)) db.rodar('DELETE FROM notas WHERE aluno_id = ? AND disciplina_id = ? AND bimestre = ?', aid, did, bim);
-        else db.rodar(`INSERT INTO notas (aluno_id, disciplina_id, bimestre, at, tbl, te, pr, rp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(aluno_id, disciplina_id, bimestre) DO UPDATE SET at = excluded.at, tbl = excluded.tbl, te = excluded.te, pr = excluded.pr, rp = excluded.rp`, aid, did, bim, ...n);
+        if (n.every(x => x === null)) db.rodar('DELETE FROM notas WHERE aluno_id = ? AND disciplina_id = ? AND ano_letivo = ? AND bimestre = ?', aid, did, t.ano_letivo, bim);
+        else db.rodar(`INSERT INTO notas (aluno_id, disciplina_id, ano_letivo, bimestre, at, tbl, te, pr, rp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(aluno_id, disciplina_id, ano_letivo, bimestre) DO UPDATE SET at = excluded.at, tbl = excluded.tbl, te = excluded.te, pr = excluded.pr, rp = excluded.rp`, aid, did, t.ano_letivo, bim, ...n);
         const f = l.faltas === '' || l.faltas == null ? 0 : valida.inteiro(l.faltas, 'Faltas', 0, 500);
-        db.rodar(`INSERT INTO faltas (aluno_id, disciplina_id, bimestre, qtd) VALUES (?, ?, ?, ?)
-          ON CONFLICT(aluno_id, disciplina_id, bimestre) DO UPDATE SET qtd = excluded.qtd`, aid, did, bim, f);
+        db.rodar(`INSERT INTO faltas (aluno_id, disciplina_id, ano_letivo, bimestre, qtd) VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(aluno_id, disciplina_id, ano_letivo, bimestre) DO UPDATE SET qtd = excluded.qtd`, aid, did, t.ano_letivo, bim, f);
       }));
       const d = db.um('SELECT nome FROM disciplinas WHERE id = ?', did);
       auditar('lançou notas e faltas', `${d.nome} · ${t.nome} · ${bim}º bimestre (${linhas.length} alunos)`);
@@ -342,7 +354,7 @@ function criarEscola(db, ganchos = {}) {
     });
   }
 
-  return { registrar, dados, SITUACOES, ATIVAS };
+  return { registrar, dados, SITUACOES, ATIVAS, sincronizarMatricula, proximaMatricula, dadosAluno, dadosResp, TURNOS, PARENTESCOS };
 }
 
 function cpfValido(c) {

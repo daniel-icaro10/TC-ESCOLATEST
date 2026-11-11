@@ -54,6 +54,7 @@ function exemplo(db) {
         const nascAno = ano - 6 - serie + (R() < .2 ? -1 : 0);
         const nasc = `${nascAno}-${String(1 + Math.floor(R() * 12)).padStart(2, '0')}-${String(1 + Math.floor(R() * 28)).padStart(2, '0')}`;
         const alunoId = db.rodar('INSERT INTO alunos (matricula, nome, nascimento, turma_id, consentimento_biometria) VALUES (?, ?, ?, ?, 1)', mat++, nome, nasc, turmaId).id;
+        db.rodar('INSERT INTO matriculas (aluno_id, ano_letivo, turma_id, turma_nome, serie) VALUES (?, ?, ?, ?, ?)', alunoId, ano, turmaId, `${serie}º Ano de Escolaridade`, serie);
         disc.forEach(d => {
           const tilt = (R() - .5) * 1.4;
           for (let b = 1; b <= 3; b++) {
@@ -61,10 +62,10 @@ function exemplo(db) {
             const n = { at: half(v() * .3), tbl: half(v() * .7), te: half(v()), pr: half(v()), rp: null };
             const media = Math.min(10, Math.floor((n.at + n.tbl + n.te + n.pr) / 3 * 10 + 1e-9) / 10);
             if (media < 6 && R() < .5) n.rp = half(clamp(base + 1 + R() * 2, 0, 10));
-            db.rodar('INSERT INTO notas (aluno_id, disciplina_id, bimestre, at, tbl, te, pr, rp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', alunoId, d.id, b, n.at, n.tbl, n.te, n.pr, n.rp);
+            db.rodar('INSERT INTO notas (aluno_id, disciplina_id, ano_letivo, bimestre, at, tbl, te, pr, rp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', alunoId, d.id, ano, b, n.at, n.tbl, n.te, n.pr, n.rp);
           }
           const f = R() < .6 ? 0 : Math.floor(R() * (base < 6 ? 6 : 3));
-          if (f) db.rodar('INSERT INTO faltas (aluno_id, disciplina_id, bimestre, qtd) VALUES (?, ?, 1, ?)', alunoId, d.id, f);
+          if (f) db.rodar('INSERT INTO faltas (aluno_id, disciplina_id, ano_letivo, bimestre, qtd) VALUES (?, ?, ?, 1, ?)', alunoId, d.id, ano, f);
         });
         const nomeResp = `${pick(PAIS)} ${nome.split(' ').slice(-1)[0]}`, s = slug(nomeResp);
         db.rodar('INSERT INTO responsaveis (aluno_id, nome, parentesco, tel, email) VALUES (?, ?, ?, ?, ?)', alunoId, nomeResp, pick(['Mãe', 'Pai', 'Mãe', 'Avó', 'Mãe']), tel(), `${s[0]}.${s[s.length - 1]}@email.com`);

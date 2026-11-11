@@ -65,6 +65,53 @@ const MIGRACOES = [
   );
   CREATE TABLE auditoria (id INTEGER PRIMARY KEY, quando TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, usuario_id INTEGER, usuario TEXT, acao TEXT NOT NULL, detalhe TEXT);
   CREATE TABLE catraca_status (matricula INTEGER PRIMARY KEY, facial INTEGER NOT NULL DEFAULT 0, cartao TEXT, senha INTEGER NOT NULL DEFAULT 0, atualizado TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+  `,
+  /* v2: notas e faltas passam a ter o ano letivo (senão, na rematrícula, as notas de anos diferentes se misturam)
+     e cada aluno tem um registro de matrícula por ano (base do histórico escolar e da rematrícula). */
+  `
+  CREATE TABLE matriculas (
+    id INTEGER PRIMARY KEY, aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE, ano_letivo INTEGER NOT NULL,
+    turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL, turma_nome TEXT, serie INTEGER, situacao TEXT NOT NULL DEFAULT 'cursando',
+    escola_origem TEXT, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (aluno_id, ano_letivo)
+  );
+  INSERT INTO matriculas (aluno_id, ano_letivo, turma_id, turma_nome, serie, situacao)
+    SELECT a.id, t.ano_letivo, t.id, t.nome, t.serie, a.situacao FROM alunos a JOIN turmas t ON t.id = a.turma_id;
+
+  CREATE TABLE notas_v2 (
+    aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+    disciplina_id INTEGER NOT NULL REFERENCES disciplinas(id) ON DELETE CASCADE,
+    ano_letivo INTEGER NOT NULL, bimestre INTEGER NOT NULL CHECK (bimestre BETWEEN 1 AND 4),
+    at REAL, tbl REAL, te REAL, pr REAL, rp REAL,
+    PRIMARY KEY (aluno_id, disciplina_id, ano_letivo, bimestre)
+  );
+  INSERT INTO notas_v2 SELECT n.aluno_id, n.disciplina_id,
+    COALESCE(t.ano_letivo, (SELECT json_extract(valor, '$.anoLetivo') FROM config WHERE chave = 'escola'), CAST(strftime('%Y', 'now') AS INTEGER)),
+    n.bimestre, n.at, n.tbl, n.te, n.pr, n.rp
+    FROM notas n JOIN alunos a ON a.id = n.aluno_id LEFT JOIN turmas t ON t.id = a.turma_id;
+  DROP TABLE notas;
+  ALTER TABLE notas_v2 RENAME TO notas;
+
+  CREATE TABLE faltas_v2 (
+    aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+    disciplina_id INTEGER NOT NULL REFERENCES disciplinas(id) ON DELETE CASCADE,
+    ano_letivo INTEGER NOT NULL, bimestre INTEGER NOT NULL CHECK (bimestre BETWEEN 1 AND 4),
+    qtd INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (aluno_id, disciplina_id, ano_letivo, bimestre)
+  );
+  INSERT INTO faltas_v2 SELECT f.aluno_id, f.disciplina_id,
+    COALESCE(t.ano_letivo, (SELECT json_extract(valor, '$.anoLetivo') FROM config WHERE chave = 'escola'), CAST(strftime('%Y', 'now') AS INTEGER)),
+    f.bimestre, f.qtd
+    FROM faltas f JOIN alunos a ON a.id = f.aluno_id LEFT JOIN turmas t ON t.id = a.turma_id;
+  DROP TABLE faltas;
+  ALTER TABLE faltas_v2 RENAME TO faltas;
+
+  /* notas de anos cursados em outra escola (aluno transferido): entram no histórico escolar */
+  CREATE TABLE historico_externo (
+    id INTEGER PRIMARY KEY, aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+    ano_letivo INTEGER NOT NULL, serie INTEGER NOT NULL, escola TEXT NOT NULL, disciplina TEXT NOT NULL,
+    media REAL, carga_horaria INTEGER, faltas INTEGER, resultado TEXT
+  );
   `
 ];
 

@@ -29,6 +29,7 @@ const semente = require('./semente');
 const { criarAuth, pode } = require('./auth');
 const { criarEscola } = require('./escola');
 const { criarCatraca } = require('./catraca');
+const { criarAcademico } = require('./academico');
 
 /* ---------------- Configuração ---------------- */
 const PADRAO = {
@@ -72,6 +73,7 @@ const roteador = criarRoteador();
 auth.registrar(roteador.rota);
 escola.registrar(roteador.rota);
 catraca.registrar(roteador.rota);
+criarAcademico(db, escola).registrar(roteador.rota);
 
 /* backup diário do banco (guarda os últimos 30 dias) */
 function fazerBackup() {
