@@ -386,7 +386,14 @@ function criarCatraca(db, { inicial = null, modoDemo = false, auditarSistema = (
     }
   }
 
-  return { registrar, alunoSaiu, configPublica };
+  /* entradas e saídas de um aluno nos últimos dias (portal da família) */
+  async function acessosAluno(mat, dias = 7) {
+    if (!configurada()) return [];
+    const inicio = new Date(); inicio.setHours(0, 0, 0, 0); inicio.setDate(inicio.getDate() - (dias - 1));
+    return (await acessos(Math.floor(inicio / 1000), null, 5000)).filter(l => String(l.matricula) === String(mat) && [7, 10, 11, 12, 15].includes(l.evento));
+  }
+
+  return { registrar, alunoSaiu, configPublica, acessosAluno };
 }
 
 module.exports = { criarCatraca, valorCartao, cartaoLegivel };

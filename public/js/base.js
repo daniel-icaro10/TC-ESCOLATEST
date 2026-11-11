@@ -228,11 +228,14 @@ const TELAS = {};   // id -> { perm, fn }
 function tela(id, perm, fn) { TELAS[id] = { perm, fn }; }
 
 const MENU = [
-  { id: 'principal', label: 'Principal', icon: 'home' },
-  { id: 'comunicados', label: 'Página de comunicados', icon: 'megaphone' },
+  { id: 'principal', label: 'Principal', icon: 'home', familia: true },
+  { id: 'familia-boletim', label: 'Boletim', icon: 'cap', perm: 'familia', soFamilia: true },
+  { id: 'familia-entradas', label: 'Entradas e saídas', icon: 'face', perm: 'familia', soFamilia: true },
+  { id: 'familia-financeiro', label: 'Mensalidades', icon: 'dollar', perm: 'familia', soFamilia: true },
+  { id: 'comunicados', label: 'Página de comunicados', icon: 'megaphone', familia: true },
   { label: 'Central de ajuda', icon: 'info', children: [{ id: 'tutoriais', label: 'Tutoriais' }, { id: 'suporte', label: 'Falar com o suporte' }] },
-  { label: 'Mensagem', icon: 'mail', perm: 'mensagens', children: [{ id: 'caixa', label: 'Caixa de entrada' }, { id: 'nova-msg', label: 'Nova mensagem' }] },
-  { label: 'Ambiente do aluno', icon: 'user', perm: 'escola.ver', children: [{ id: 'portal-aluno', label: 'Portal do aluno' }, { id: 'app-familia', label: 'Aplicativo da família' }] },
+  { label: 'Mensagem', icon: 'mail', perm: 'mensagens', familia: true, children: [{ id: 'caixa', label: 'Caixa de entrada', familia: true }, { id: 'nova-msg', label: 'Nova mensagem', familia: true }] },
+  { label: 'Ambiente do aluno', icon: 'user', perm: 'escola.ver', children: [{ id: 'portal-aluno', label: 'Portal do aluno', perm: 'cadastros' }, { id: 'app-familia', label: 'Aplicativo da família' }] },
   { label: 'Secretaria', icon: 'users', perm: 'escola.ver', children: [
     { label: 'Cadastro', icon: 'user', children: [{ id: 'alunos', label: 'Alunos' }, { id: 'responsaveis', label: 'Responsáveis' }, { id: 'professores', label: 'Professores' }, { id: 'importar', label: 'Importar planilha', perm: 'cadastros' }] },
     { label: 'Turmas', icon: 'pencil', children: [
@@ -252,12 +255,14 @@ const MENU = [
   { label: 'Financeiro', icon: 'dollar', perm: 'financeiro.ver', children: [{ id: 'mensalidades', label: 'Mensalidades' }, { id: 'inadimplencia', label: 'Inadimplência' }] },
   { id: 'relatorios', label: 'Central de relatórios', icon: 'chart', perm: 'relatorios' },
   { id: 'config', label: 'Configurações', icon: 'settings', perm: 'config' },
-  { id: 'minha-conta', label: 'Minha conta', icon: 'key' },
-  { id: 'sair', label: 'Sair', icon: 'logout' }
+  { id: 'minha-conta', label: 'Minha conta', icon: 'key', familia: true },
+  { id: 'sair', label: 'Sair', icon: 'logout', familia: true }
 ];
 const abertos = new Set();
 const keyOf = p => p.join('>');
-const visiveis = items => items.filter(it => pode(it.perm)).map(it => it.children ? { ...it, children: visiveis(it.children) } : it).filter(it => !it.children || it.children.length);
+// a família vê só os itens marcados para ela; a equipe não vê os itens só da família
+const ehFamilia = () => !!SESSAO.usuario && SESSAO.usuario.papel === 'familia';
+const visiveis = items => items.filter(it => pode(it.perm) && (ehFamilia() ? it.familia || it.soFamilia : !it.soFamilia)).map(it => it.children ? { ...it, children: visiveis(it.children) } : it).filter(it => !it.children || it.children.length);
 function findPath(items, id, path = []) {
   for (const it of items) {
     const p = [...path, it.label];
@@ -354,7 +359,7 @@ function mostrarLogin(aviso) {
       <div id="lErro" role="alert"></div>
       <button class="btn blue" type="submit">Entrar</button>
       ${SESSAO.demo ? html`<div class="demo-users"><b>Demonstração.</b> Entre com um dos usuários de teste (senha <b>demo1234</b>):<br>
-        ${['admin', 'secretaria', 'coordenacao', 'professor', 'portaria', 'financeiro'].map((u, i) => html`${i ? ' · ' : ''}<button type="button" data-demo="${u}.demo">${u}.demo</button>`)}</div>` : html`<p>Esqueceu a senha? Peça ao administrador do sistema para criar uma nova.</p>`}
+        ${['admin', 'secretaria', 'coordenacao', 'professor', 'portaria', 'financeiro', 'familia'].map((u, i) => html`${i ? ' · ' : ''}<button type="button" data-demo="${u}.demo">${u}.demo</button>`)}</div>` : html`<p>Esqueceu a senha? Peça ao administrador do sistema para criar uma nova.</p>`}
     </form>`;
   box.querySelectorAll('[data-demo]').forEach(b => b.onclick = () => { $('lLogin').value = b.dataset.demo; $('lSenha').value = 'demo1234'; $('loginForm').requestSubmit(); });
   $('lLogin').focus();

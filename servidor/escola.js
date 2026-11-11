@@ -32,7 +32,18 @@ function criarEscola(db, ganchos = {}) {
     turmas.forEach(t => { t.disciplinas = porTurma.get(t.id) || []; t.finalizada = !!t.finalizada; t.bloqueada = !!t.bloqueada; });
     alunos.forEach(a => { a.consentimentoBiometria = !!a.consentimentoBiometria; });
 
-    if (!pode(usuario, 'escola.ver')) {
+    if (usuario.papel === 'familia') {
+      // família: só os próprios filhos, e só o que a escola deixou visível
+      const cfgF = { mostrarNotas: true, ...(db.config('familia') || {}) };
+      const meus = new Set(db.todos('SELECT aluno_id FROM usuario_alunos WHERE usuario_id = ?', usuario.id).map(r => r.aluno_id));
+      alunos = alunos.filter(a => meus.has(a.id)).map(({ id, matricula, nome, nascimento, turmaId, situacao }) => ({ id, matricula, nome, nascimento, turmaId, situacao }));
+      const turmasIds = new Set(alunos.map(a => a.turmaId));
+      turmas = turmas.filter(t => turmasIds.has(t.id));
+      notas = cfgF.mostrarNotas ? notas.filter(n => meus.has(n[0])) : [];
+      faltas = cfgF.mostrarNotas ? faltas.filter(f => meus.has(f[0])) : [];
+      professores = professores.filter(p => turmas.some(t => t.disciplinas.some(d => d.professorId === p.id))).map(({ id, nome }) => ({ id, nome }));
+      responsaveis = [];
+    } else if (!pode(usuario, 'escola.ver')) {
       if (usuario.papel === 'professor' && pode(usuario, 'notas.proprias')) {
         // professor: só as turmas e disciplinas em que dá aula, sem dados pessoais além do necessário
         const minhas = new Set(vinculos.filter(v => v.professorId === usuario.professorId).map(v => `${v.turmaId}|${v.disciplinaId}`));

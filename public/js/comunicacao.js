@@ -2,7 +2,7 @@
 /* =====================================================================
    Comunicados, mensagens, tutoriais e suporte.
    ===================================================================== */
-const PUBLICOS = { todos: 'Todos', professores: 'Professores', secretaria: 'Secretaria e coordenação', portaria: 'Portaria' };
+const PUBLICOS = { todos: 'Toda a equipe', professores: 'Professores', secretaria: 'Secretaria e coordenação', portaria: 'Portaria', familias: 'Famílias', geral: 'Equipe e famílias' };
 const textoComQuebras = t => html`${String(t || '').split('\n').map((l, i) => html`${i ? seguro('<br>') : ''}${l}`)}`;
 
 /* ---------- avisos no topo: mensagens não lidas e comunicados novos ---------- */

@@ -3,7 +3,8 @@
    Configurações (administrador): dados da escola, usuários e registro
    de atividades. Minha conta: troca de senha (todos).
    ===================================================================== */
-const PAPEIS = { admin: 'Administrador', secretaria: 'Secretaria', coordenacao: 'Coordenação', professor: 'Professor', portaria: 'Portaria', financeiro: 'Financeiro' };
+const PAPEIS = { admin: 'Administrador', secretaria: 'Secretaria', coordenacao: 'Coordenação', professor: 'Professor', portaria: 'Portaria', financeiro: 'Financeiro', familia: 'Família' };
+const PAPEIS_EQUIPE = Object.fromEntries(Object.entries(PAPEIS).filter(([k]) => k !== 'familia'));
 const DESCR_PAPEL = {
   admin: 'Tudo, inclusive usuários, configurações e catraca.',
   secretaria: 'Cadastros, matrículas, notas, boletins, relatórios e cadastro na catraca.',
@@ -55,7 +56,7 @@ tela('config-usuarios', 'usuarios', async () => {
       </table></div>
     </section>
     <section class="panel"><div class="panel-h">${ic('shield')}<h2>Tipos de acesso</h2></div>
-      <ul class="steps">${Object.entries(PAPEIS).map(([k, v]) => html`<li><span class="st">${ic(k === 'admin' ? 'key' : 'user')}</span><p><b>${v}:</b> ${DESCR_PAPEL[k]}</p><span></span></li>`)}</ul></section>`;
+      <ul class="steps">${Object.entries(PAPEIS_EQUIPE).map(([k, v]) => html`<li><span class="st">${ic(k === 'admin' ? 'key' : 'user')}</span><p><b>${v}:</b> ${DESCR_PAPEL[k]}</p><span></span></li>`)}</ul></section>`;
   try {
     USUARIOS = await api('usuarios');
     if (!$('rows')) return;
@@ -75,7 +76,7 @@ function formUsuario(u) {
     fields: [
       { name: 'nome', label: 'Nome da pessoa', required: true, full: true },
       { name: 'login', label: 'Usuário para entrar', required: true, placeholder: 'Ex.: maria.souza', validar: v => /^[a-z0-9._-]{3,40}$/i.test(v) ? '' : 'Use de 3 a 40 letras sem acento, números, ponto ou traço.' },
-      { name: 'papel', label: 'Tipo de acesso', type: 'select', required: true, options: Object.entries(PAPEIS).map(([v, t]) => ({ v, t })) },
+      { name: 'papel', label: 'Tipo de acesso', type: 'select', required: true, options: Object.entries(PAPEIS_EQUIPE).map(([v, t]) => ({ v, t })), hint: 'Acessos das famílias são criados em Ambiente do aluno > Portal do aluno.' },
       { name: 'professorId', label: 'Professor ligado a este usuário', type: 'select', options: optProfs(), hint: 'Só para o tipo Professor: define quais diários ele vê.' },
       { name: 'senha', label: u ? 'Nova senha (em branco mantém a atual)' : 'Senha inicial', type: 'password', required: !u, autocomplete: 'new-password', hint: 'No mínimo 8 caracteres, com letras e números. Passe para a pessoa e peça para ela trocar em Minha conta.' },
       ...(u ? [{ name: 'ativo', label: 'Usuário ativo', type: 'checkbox', hint: 'Desmarque para bloquear o acesso (por exemplo, quando a pessoa sai da escola).' }] : [])

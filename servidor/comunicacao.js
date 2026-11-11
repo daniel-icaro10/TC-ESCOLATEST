@@ -3,8 +3,9 @@
 const { ErroHttp, valida } = require('./http');
 const { pode, PAPEIS } = require('./auth');
 
-const PUBLICOS = { todos: 'Todos', professores: 'Professores', secretaria: 'Secretaria e coordenação', portaria: 'Portaria' };
-const vePublico = (usuario, publico) => publico === 'todos' || usuario.papel === 'admin'
+const PUBLICOS = { todos: 'Toda a equipe', professores: 'Professores', secretaria: 'Secretaria e coordenação', portaria: 'Portaria', familias: 'Famílias', geral: 'Equipe e famílias' };
+const vePublico = (usuario, publico) => usuario.papel === 'familia' ? ['familias', 'geral'].includes(publico)
+  : publico === 'todos' || publico === 'geral' || usuario.papel === 'admin'
   || (publico === 'professores' && usuario.papel === 'professor')
   || (publico === 'secretaria' && ['secretaria', 'coordenacao', 'financeiro'].includes(usuario.papel))
   || (publico === 'portaria' && usuario.papel === 'portaria')
@@ -44,7 +45,8 @@ function criarComunicacao(db) {
     });
 
     /* ----- mensagens ----- */
-    rota('GET', '/api/mensagens/contatos', 'mensagens', ({ usuario }) => db.todos('SELECT id, nome, papel FROM usuarios WHERE ativo = 1 AND id <> ? ORDER BY nome', usuario.id)
+    // a família só fala com a secretaria, a coordenação e a direção
+    rota('GET', '/api/mensagens/contatos', 'mensagens', ({ usuario }) => db.todos(`SELECT id, nome, papel FROM usuarios WHERE ativo = 1 AND id <> ? ${usuario.papel === 'familia' ? "AND papel IN ('admin', 'secretaria', 'coordenacao')" : ''} ORDER BY papel = 'familia', nome`, usuario.id)
       .map(u => ({ ...u, papelNome: PAPEIS[u.papel] })));
     rota('GET', '/api/mensagens/nao-lidas', 'logado', ({ usuario }) => ({
       mensagens: db.um('SELECT COUNT(*) n FROM mensagens WHERE para_id = ? AND lida_em IS NULL AND apagada_para = 0', usuario.id).n,
@@ -72,6 +74,10 @@ function criarComunicacao(db) {
       const ids = new Set((Array.isArray(corpo.para) ? corpo.para : []).map(Number).filter(Number.isInteger));
       (Array.isArray(corpo.papeis) ? corpo.papeis : []).filter(p => PAPEIS[p]).forEach(p => db.todos('SELECT id FROM usuarios WHERE papel = ? AND ativo = 1', p).forEach(u => ids.add(u.id)));
       ids.delete(usuario.id);
+      if (usuario.papel === 'familia') {
+        if (corpo.papeis && corpo.papeis.length) throw new ErroHttp('Escolha para quem enviar.');
+        [...ids].forEach(id => { if (!db.um("SELECT 1 FROM usuarios WHERE id = ? AND papel IN ('admin', 'secretaria', 'coordenacao')", id)) ids.delete(id); });
+      }
       const validos = [...ids].filter(id => db.um('SELECT 1 FROM usuarios WHERE id = ? AND ativo = 1', id));
       if (!validos.length) throw new ErroHttp('Escolha para quem enviar.');
       if (validos.length > 500) throw new ErroHttp('Destinatários demais.');
@@ -98,6 +104,7 @@ function criarComunicacao(db) {
       return s;
     });
     rota('POST', '/api/suporte', 'logado', ({ corpo, usuario, auditar }) => {
+      if (usuario.papel === 'familia') throw new ErroHttp('Fale com a escola pela Caixa de mensagens.', 403);
       const assunto = valida.texto(corpo.assunto, 'o assunto', { obrigatorio: true, max: 150 });
       const texto = String(corpo.texto || '').trim().slice(0, 10000);
       if (!texto) throw new ErroHttp('Descreva o problema ou a dúvida.');

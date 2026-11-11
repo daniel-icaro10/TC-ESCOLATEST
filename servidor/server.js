@@ -34,6 +34,7 @@ const { criarMatriculas } = require('./matriculas');
 const { criarComunicacao } = require('./comunicacao');
 const { criarPedagogico } = require('./pedagogico');
 const { criarFinanceiro } = require('./financeiro');
+const { criarFamilia } = require('./familia');
 
 /* ---------------- Configuração ---------------- */
 const PADRAO = {
@@ -81,7 +82,9 @@ criarAcademico(db, escola).registrar(roteador.rota);
 criarMatriculas(db, escola).registrar(roteador.rota);
 criarComunicacao(db).registrar(roteador.rota);
 criarPedagogico(db).registrar(roteador.rota);
-criarFinanceiro(db).registrar(roteador.rota);
+const financeiro = criarFinanceiro(db);
+financeiro.registrar(roteador.rota);
+criarFamilia(db, { auth, catraca, financeiro }).registrar(roteador.rota);
 
 /* backup diário do banco (guarda os últimos 30 dias) */
 function fazerBackup() {
@@ -187,7 +190,7 @@ servidor.listen(cfg.porta, cfg.host, () => {
   console.log(`Banco de dados: ${ARQ_BANCO === ':memory:' ? 'só na memória (demonstração)' : ARQ_BANCO}`);
   const c = catraca.configPublica();
   console.log(c.configurada ? `Catraca Control iD em ${c.ip} · ação de liberar: ${c.acaoLiberar}` : 'Catraca ainda não configurada (configure pelo portal).');
-  if (cfg.dadosExemplo) console.log('DEMONSTRAÇÃO: dados fictícios. Usuários de teste: admin.demo, secretaria.demo, coordenacao.demo, professor.demo, portaria.demo, financeiro.demo (senha demo1234).');
+  if (cfg.dadosExemplo) console.log('DEMONSTRAÇÃO: dados fictícios. Usuários de teste: admin.demo, secretaria.demo, coordenacao.demo, professor.demo, portaria.demo, financeiro.demo, familia.demo (senha demo1234).');
   if (!TEM_PORTAL) console.warn('ATENÇÃO: não achei o portal (pasta "public" ao lado de "servidor"). Copie a pasta do projeto inteira.');
   console.log('Deixe esta janela aberta enquanto o sistema estiver em uso.');
 });

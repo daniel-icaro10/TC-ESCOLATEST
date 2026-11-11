@@ -13,6 +13,7 @@ const anoAtual = () => SESSAO.escola.anoLetivo;
 /* ================= Principal ================= */
 tela('principal', null, () => {
   const u = SESSAO.usuario;
+  if (ehFamilia()) return principalFamilia();
   if (!pode('escola.ver')) {
     // professor e portaria: atalhos do dia a dia
     const atalhos = [

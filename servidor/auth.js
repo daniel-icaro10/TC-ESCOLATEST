@@ -12,7 +12,8 @@ const PAPEIS = {
   coordenacao: 'Coordenação',
   professor: 'Professor',
   portaria: 'Portaria',
-  financeiro: 'Financeiro'
+  financeiro: 'Financeiro',
+  familia: 'Família'
 };
 
 /* O que cada papel pode fazer. 'admin' pode tudo. */
@@ -21,7 +22,8 @@ const PERMISSOES = {
   coordenacao: ['escola.ver', 'notas', 'relatorios', 'catraca.acessos', 'comunicados', 'mensagens', 'pedagogico', 'pedagogico.ver'],
   professor: ['notas.proprias', 'mensagens', 'pedagogico.proprio'],
   portaria: ['catraca.acessos', 'mensagens'],
-  financeiro: ['escola.ver', 'financeiro', 'financeiro.ver', 'relatorios', 'mensagens']
+  financeiro: ['escola.ver', 'financeiro', 'financeiro.ver', 'relatorios', 'mensagens'],
+  familia: ['familia', 'mensagens']   // responsável: vê só os alunos ligados a ele
 };
 const pode = (usuario, perm) => !!usuario && (usuario.papel === 'admin' || (PERMISSOES[usuario.papel] || []).includes(perm));
 const permissoesDe = papel => papel === 'admin' ? ['*'] : (PERMISSOES[papel] || []);
@@ -147,7 +149,7 @@ function criarAuth(db, { demo = false } = {}) {
 
     /* ----- gestão de usuários (só administrador) ----- */
     rota('GET', '/api/usuarios', 'usuarios', () => db.todos(`SELECT u.id, u.nome, u.login, u.papel, u.ativo, u.professor_id AS professorId, u.ultimo_acesso AS ultimoAcesso, p.nome AS professor
-      FROM usuarios u LEFT JOIN professores p ON p.id = u.professor_id ORDER BY u.ativo DESC, u.nome`));
+      FROM usuarios u LEFT JOIN professores p ON p.id = u.professor_id WHERE u.papel <> 'familia' ORDER BY u.ativo DESC, u.nome`));
 
     rota('POST', '/api/usuarios', 'usuarios', ({ corpo, auditar }) => {
       const d = dadosUsuario(corpo, true);
@@ -183,6 +185,7 @@ function criarAuth(db, { demo = false } = {}) {
     const login = validaLogin(c.login);
     if (db.um('SELECT 1 FROM usuarios WHERE login = ? AND id <> ?', login, id || 0)) throw new ErroHttp('Já existe um usuário com esse login.', 409);
     if (!PAPEIS[c.papel]) throw new ErroHttp('Escolha o tipo de acesso.');
+    if (c.papel === 'familia' && !c.permitirFamilia) throw new ErroHttp('Os acessos das famílias são criados em Ambiente do aluno > Portal do aluno.');
     let professorId = null;
     if (c.papel === 'professor') {
       professorId = valida.inteiro(c.professorId, 'Professor', 1);
@@ -198,11 +201,19 @@ function criarAuth(db, { demo = false } = {}) {
     const lista = [['Administrador (demo)', 'admin.demo', 'admin'], ['Secretaria (demo)', 'secretaria.demo', 'secretaria'], ['Coordenação (demo)', 'coordenacao.demo', 'coordenacao'],
       ['Portaria (demo)', 'portaria.demo', 'portaria'], ['Financeiro (demo)', 'financeiro.demo', 'financeiro']];
     lista.forEach(([nome, login, papel]) => { if (!db.um('SELECT 1 FROM usuarios WHERE login = ?', login)) db.rodar('INSERT INTO usuarios (nome, login, senha_hash, papel) VALUES (?, ?, ?, ?)', nome, login, hashSenha('demo1234'), papel); });
+    // família de teste: responsável por dois alunos
+    if (!db.um("SELECT 1 FROM usuarios WHERE login = 'familia.demo'")) {
+      const al = db.todos('SELECT a.id, r.nome FROM alunos a JOIN responsaveis r ON r.aluno_id = a.id ORDER BY a.id LIMIT 1')[0];
+      if (al) {
+        const fid = db.rodar('INSERT INTO usuarios (nome, login, senha_hash, papel) VALUES (?, ?, ?, ?)', `${al.nome} (demo)`, 'familia.demo', hashSenha('demo1234'), 'familia').id;
+        [al.id, al.id + 40].forEach(a => { if (db.um('SELECT 1 FROM alunos WHERE id = ?', a)) db.rodar('INSERT INTO usuario_alunos (usuario_id, aluno_id) VALUES (?, ?)', fid, a); });
+      }
+    }
     const prof = db.um("SELECT id, nome FROM professores WHERE nome = 'Renata Siqueira'") || db.um('SELECT id, nome FROM professores LIMIT 1');
     if (prof && !db.um("SELECT 1 FROM usuarios WHERE login = 'professor.demo'")) db.rodar('INSERT INTO usuarios (nome, login, senha_hash, papel, professor_id) VALUES (?, ?, ?, ?, ?)', `${prof.nome} (demo)`, 'professor.demo', hashSenha('demo1234'), 'professor', prof.id);
   }
 
-  return { registrar, usuarioDaSessao, pode, COOKIE, usuariosDemo };
+  return { registrar, usuarioDaSessao, pode, COOKIE, usuariosDemo, validaLogin, dadosUsuario };
 }
 
 module.exports = { criarAuth, PAPEIS, PERMISSOES, pode, hashSenha, confereSenha };

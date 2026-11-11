@@ -190,6 +190,14 @@ const MIGRACOES = [
   CREATE INDEX cobrancas_aluno ON cobrancas(aluno_id);
   CREATE INDEX cobrancas_venc ON cobrancas(vencimento);
   CREATE UNIQUE INDEX cobrancas_mensalidade ON cobrancas(aluno_id, competencia, descricao) WHERE cancelada = 0;
+  `,
+  /* v7: acesso das famílias (cada usuário da família vê só os alunos ligados a ele) */
+  `
+  CREATE TABLE usuario_alunos (
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
+    PRIMARY KEY (usuario_id, aluno_id)
+  );
   `
 ];
 

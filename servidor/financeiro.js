@@ -146,7 +146,7 @@ function criarFinanceiro(db) {
       return publica(db.um('SELECT * FROM cobrancas WHERE id = ?', c.id));
     });
   }
-  return { registrar };
+  return { registrar, publica };
 }
 
 module.exports = { criarFinanceiro, FORMAS };
