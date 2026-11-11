@@ -67,11 +67,24 @@ function exemplo(db) {
           const f = R() < .6 ? 0 : Math.floor(R() * (base < 6 ? 6 : 3));
           if (f) db.rodar('INSERT INTO faltas (aluno_id, disciplina_id, ano_letivo, bimestre, qtd) VALUES (?, ?, ?, 1, ?)', alunoId, d.id, ano, f);
         });
+        // financeiro de demonstração: mensalidades de fevereiro até o mês atual, quase todas pagas
+        if (db.um("SELECT 1 FROM sqlite_master WHERE name = 'cobrancas'")) {
+          const bolsa = R() < .1 ? 50 : 0, mesAtual = new Date().getFullYear() === ano ? new Date().getMonth() + 1 : 12;
+          for (let m = 2; m <= Math.min(12, mesAtual); m++) {
+            const comp = `${ano}-${String(m).padStart(2, '0')}`, venc = `${comp}-10`;
+            const pago = m < mesAtual - 1 ? R() < .992 : m < mesAtual ? R() < .9 : R() < .5;
+            const desc = 650 * bolsa / 100;
+            db.rodar("INSERT INTO cobrancas (aluno_id, ano_letivo, competencia, descricao, valor, desconto, vencimento, pago_em, valor_pago, forma, recebido_por) VALUES (?, ?, ?, 'Mensalidade', 650, ?, ?, ?, ?, ?, ?)",
+              alunoId, ano, comp, desc, venc, pago ? [`${comp}-${String(3 + Math.floor(R() * 8)).padStart(2, '0')}`, new Date().toISOString().slice(0, 10)].sort()[0] : null, pago ? 650 - desc : null, pago ? pick(['PIX', 'PIX', 'Boleto', 'Dinheiro', 'Cartão de débito']) : null, pago ? 'Financeiro (demo)' : null);
+          }
+          if (bolsa) db.rodar('INSERT INTO financeiro_alunos (aluno_id, ano_letivo, bolsa_pct) VALUES (?, ?, ?)', alunoId, ano, bolsa);
+        }
         const nomeResp = `${pick(PAIS)} ${nome.split(' ').slice(-1)[0]}`, s = slug(nomeResp);
         db.rodar('INSERT INTO responsaveis (aluno_id, nome, parentesco, tel, email) VALUES (?, ?, ?, ?, ?)', alunoId, nomeResp, pick(['Mãe', 'Pai', 'Mãe', 'Avó', 'Mãe']), tel(), `${s[0]}.${s[s.length - 1]}@email.com`);
       }
     });
   });
+  if (db.config('financeiro') === null) db.salvarConfig('financeiro', { valorPadrao: 650, diaVencimento: 10, multaPct: 2, jurosMesPct: 1 });
   return true;
 }
 

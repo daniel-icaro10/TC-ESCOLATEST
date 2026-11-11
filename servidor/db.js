@@ -173,6 +173,23 @@ const MIGRACOES = [
     disciplina_id INTEGER NOT NULL REFERENCES disciplinas(id) ON DELETE CASCADE, acertos INTEGER NOT NULL,
     PRIMARY KEY (simulado_id, aluno_id, disciplina_id)
   );
+  `,
+  /* v6: financeiro (mensalidades) */
+  `
+  CREATE TABLE financeiro_alunos (
+    aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE, ano_letivo INTEGER NOT NULL,
+    valor REAL, bolsa_pct REAL NOT NULL DEFAULT 0, dia_vencimento INTEGER, observacao TEXT,
+    PRIMARY KEY (aluno_id, ano_letivo)
+  );
+  CREATE TABLE cobrancas (
+    id INTEGER PRIMARY KEY, aluno_id INTEGER NOT NULL REFERENCES alunos(id) ON DELETE CASCADE, ano_letivo INTEGER NOT NULL,
+    competencia TEXT NOT NULL, descricao TEXT NOT NULL, valor REAL NOT NULL, desconto REAL NOT NULL DEFAULT 0, vencimento TEXT NOT NULL,
+    pago_em TEXT, valor_pago REAL, forma TEXT, recebido_por TEXT, observacao TEXT, cancelada INTEGER NOT NULL DEFAULT 0,
+    criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX cobrancas_aluno ON cobrancas(aluno_id);
+  CREATE INDEX cobrancas_venc ON cobrancas(vencimento);
+  CREATE UNIQUE INDEX cobrancas_mensalidade ON cobrancas(aluno_id, competencia, descricao) WHERE cancelada = 0;
   `
 ];
 

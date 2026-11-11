@@ -33,6 +33,7 @@ const { criarAcademico } = require('./academico');
 const { criarMatriculas } = require('./matriculas');
 const { criarComunicacao } = require('./comunicacao');
 const { criarPedagogico } = require('./pedagogico');
+const { criarFinanceiro } = require('./financeiro');
 
 /* ---------------- Configuração ---------------- */
 const PADRAO = {
@@ -80,6 +81,7 @@ criarAcademico(db, escola).registrar(roteador.rota);
 criarMatriculas(db, escola).registrar(roteador.rota);
 criarComunicacao(db).registrar(roteador.rota);
 criarPedagogico(db).registrar(roteador.rota);
+criarFinanceiro(db).registrar(roteador.rota);
 
 /* backup diário do banco (guarda os últimos 30 dias) */
 function fazerBackup() {
