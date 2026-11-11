@@ -114,9 +114,15 @@ http.createServer((req, res) => {
     const fn = rotas[nome];
     if (!fn) { res.writeHead(404); return res.end('{"error":"not found"}'); }
     if (nome !== 'login.fcgi' && nome !== 'session_is_valid.fcgi' && !sessoes.has(url.searchParams.get('session'))) { res.writeHead(401); return res.end('{"error":"Invalid session"}'); }
-    const [st, dados] = await fn(corpo, url.searchParams, bruto);
+    let st, dados;
+    // pedido fora do formato não pode derrubar o simulador (na demonstração online ele divide o processo com a ponte)
+    try { [st, dados] = await fn(corpo, url.searchParams, bruto); }
+    catch (e) { [st, dados] = [400, { error: 'Invalid request: ' + e.message }]; }
     console.log(new Date().toLocaleTimeString('pt-BR'), nome, st);
     res.writeHead(st, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(dados));
   });
+}).on('error', e => {
+  console.error(e.code === 'EADDRINUSE' ? `A porta ${PORTA} já está em uso: o simulador provavelmente já está aberto em outra janela.` : 'Não consegui iniciar o simulador: ' + e.message);
+  process.exit(1);
 }).listen(PORTA, '127.0.0.1', () => console.log(`Simulador da catraca Control iD em http://127.0.0.1:${PORTA} (login admin / admin)`));

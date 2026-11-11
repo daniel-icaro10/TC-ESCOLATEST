@@ -16,6 +16,14 @@
  */
 'use strict';
 
+// fetch e AbortSignal.timeout só existem a partir do Node 18; sem isso todo pedido à catraca
+// falharia com a mensagem enganosa "não foi possível falar com a catraca"
+if (typeof fetch !== 'function' || typeof AbortSignal === 'undefined' || typeof AbortSignal.timeout !== 'function') {
+  console.error(`A ponte da catraca precisa do Node.js 18 ou mais novo (este computador tem o ${process.version}).`);
+  console.error('Baixe a versão LTS em https://nodejs.org e abra a ponte de novo.');
+  process.exit(1);
+}
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -66,7 +74,10 @@ if (process.env.PORT) cfg.porta = Number(process.env.PORT);   // o Render define
 // Endereços pelos quais a ponte local pode ser chamada. Bloqueia "DNS rebinding": um site malicioso
 // que aponta o próprio domínio para 127.0.0.1 para tentar liberar a catraca pelo navegador da recepção.
 const HOSTS_LOCAIS = new Set(['localhost', '127.0.0.1', '[::1]'].map(h => `${h}:${cfg.porta}`));
-const PASTA_PORTAL = path.join(__dirname, '..', 'public');
+// o portal fica em ../public (projeto inteiro copiado) ou em ./public (pasta public dentro de ponte-catraca)
+const PASTA_PORTAL = [path.join(__dirname, '..', 'public'), path.join(__dirname, 'public')]
+  .find(p => fs.existsSync(path.join(p, 'index.html'))) || path.join(__dirname, '..', 'public');
+const TEM_PORTAL = fs.existsSync(path.join(PASTA_PORTAL, 'index.html'));
 
 /* ---------------- Cliente da catraca ---------------- */
 let sessao = null;
@@ -255,7 +266,11 @@ async function cadastroRemoto(mat, tipo, nome) {
     const msg = tipo === 'face' ? (MSG_FACE[e.code] || e.message || 'Não foi possível cadastrar o rosto.') : (e.message || 'Nenhum cartão lido.');
     throw new ErroCatraca(msg, 422, r);
   }
-  return tipo === 'card' ? { ok: true, cartao: r.card_value ? cartaoLegivel(r.card_value) : null } : { ok: true };
+  if (tipo !== 'card') return { ok: true };
+  // alguns firmwares não devolvem o número lido: busca o cartão que a catraca gravou para o aluno
+  let valor = r.card_value;
+  if (!valor) valor = ((await carregar('cards', { where: { cards: { user_id: u.id } } }).catch(() => []))[0] || {}).value;
+  return { ok: true, cartao: valor ? cartaoLegivel(valor) : null };
 }
 
 async function listarAlunos() {
@@ -392,7 +407,14 @@ function lerCorpo(req, max = 3 * 1024 * 1024) {
 
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.svg': 'image/svg+xml', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon' };
 function servirArquivo(req, res, caminhoUrl) {
-  const rel = caminhoUrl === '/' ? 'index.html' : decodeURIComponent(caminhoUrl).replace(/^\/+/, '');
+  if (!TEM_PORTAL) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return res.end('A ponte está rodando, mas não achou o portal (pasta "public").\nCopie a pasta do projeto inteira para este computador, com as pastas "public" e "ponte-catraca" lado a lado.');
+  }
+  let rel;
+  // endereço malformado (ex.: /%E0) faria decodeURIComponent lançar erro e derrubar a ponte
+  try { rel = caminhoUrl === '/' ? 'index.html' : decodeURIComponent(caminhoUrl).replace(/^\/+/, ''); }
+  catch (e) { res.writeHead(400); return res.end(); }
   const arq = path.resolve(PASTA_PORTAL, rel);
   if (!arq.startsWith(PASTA_PORTAL + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(arq, (e, dados) => {
@@ -405,7 +427,15 @@ function servirArquivo(req, res, caminhoUrl) {
   });
 }
 
-const servidor = http.createServer(async (req, res) => {
+/* Nenhum pedido pode derrubar a ponte: um erro inesperado vira resposta 500 em vez de encerrar o processo. */
+const servidor = http.createServer((req, res) => {
+  tratar(req, res).catch(e => {
+    console.error(new Date().toLocaleString('pt-BR'), 'erro inesperado em', req.method, req.url, e && e.stack || e);
+    try { if (!res.headersSent) responder(req, res, 500, { erro: 'Erro interno na ponte da catraca.' }); else res.end(); } catch (e2) { /* conexão já fechada */ }
+  });
+});
+
+async function tratar(req, res) {
   const url = new URL(req.url, 'http://localhost');
   const rota = url.pathname;
 
@@ -452,7 +482,7 @@ const servidor = http.createServer(async (req, res) => {
     } else if (req.method === 'GET' && rota === '/api/acessos') {
       const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
       const desde = Number(url.searchParams.get('desde')) || Math.floor(hoje / 1000);
-      const limite = Math.min(500, Number(url.searchParams.get('limite')) || 100);
+      const limite = Math.max(1, Math.min(500, Math.floor(Number(url.searchParams.get('limite'))) || 100));
       dados = await acessos(desde, limite);
     } else {
       return responder(req, res, 404, { erro: 'Rota não encontrada.' });
@@ -463,10 +493,17 @@ const servidor = http.createServer(async (req, res) => {
     if (status >= 500) console.error(new Date().toLocaleString('pt-BR'), rota, e.message, e.extra || '');
     responder(req, res, status, { erro: e.message });
   }
+}
+
+servidor.on('error', e => {
+  if (e.code === 'EADDRINUSE') console.error(`A porta ${cfg.porta} já está em uso: a ponte provavelmente já está aberta em outra janela. Feche a outra janela ou use só ela.`);
+  else console.error('Não consegui iniciar a ponte:', e.message);
+  process.exit(1);
 });
 
 servidor.listen(cfg.porta, cfg.host, () => {
   console.log(`Ponte da catraca rodando em http://${cfg.host === '0.0.0.0' ? 'localhost' : cfg.host}:${cfg.porta}`);
   console.log(`Catraca Control iD em http://${cfg.catraca.ip} · ação de liberar: ${cfg.acaoLiberar}`);
-  if (cfg.servirPortal) console.log(`Portal disponível em http://localhost:${cfg.porta}`);
+  if (cfg.servirPortal && TEM_PORTAL) console.log(`Portal disponível em http://localhost:${cfg.porta}`);
+  else if (cfg.servirPortal) console.warn(`ATENÇÃO: não achei o portal (pasta "public" ao lado de "ponte-catraca"). Copie a pasta do projeto inteira.`);
 });

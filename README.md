@@ -6,7 +6,11 @@ Protótipo do sistema de gestão escolar (secretaria): lista de turmas, alunos, 
 
 ## Rodar localmente
 
-Abra `public/index.html` no navegador.
+- **Só o portal**: abra `public/index.html` no navegador. As telas de catraca não funcionam assim, porque precisam da ponte.
+- **Portal com a catraca simulada** (sem equipamento): dê dois cliques em `ponte-catraca/demo.bat` (precisa do Node.js 18+). Veja [Testar sem a catraca](#testar-sem-a-catraca).
+- **Portal com a catraca de verdade**: dê dois cliques em `ponte-catraca/iniciar.bat`. Veja [Instalar a ponte](#instalar-a-ponte).
+
+Sem Windows: `node ponte-catraca/simulador.js` num terminal e, em outro, `PONTE_CONFIG=config.demo.local.json PONTE_CONFIG_PADRAO=config.demo.json node ponte-catraca/server.js`. Abra `http://localhost:8787`.
 
 ## Publicar no Render
 
@@ -39,7 +43,7 @@ O navegador não fala direto com a catraca: ela só tem HTTP na rede local e nã
 ### Instalar a ponte
 
 1. Instale o Node.js 18 ou mais novo no computador da recepção (na mesma rede da catraca).
-2. Copie a pasta `ponte-catraca` para esse computador e dê dois cliques em `iniciar.bat`. Deixe a janela aberta.
+2. Copie a pasta do projeto **inteira** para esse computador (as pastas `public` e `ponte-catraca` precisam ficar lado a lado: a ponte serve o portal a partir de `public`). Dê dois cliques em `ponte-catraca/iniciar.bat` e deixe a janela aberta.
 3. O portal abre em `http://localhost:8787/#catraca-config`. Preencha na tela:
    - **IP da catraca**, **usuário** e **senha** de administrador (o padrão de fábrica é `admin` / `admin`).
    - **Modelo**: iDBlock, iDFace/iDFlex com SecBox, ou porta com relé.
