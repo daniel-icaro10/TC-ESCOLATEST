@@ -15,3 +15,5 @@ espa*amento.jpeg
 servidor/config.json
 servidor/dados/
 servidor/*.tmp
+
+node_modules/

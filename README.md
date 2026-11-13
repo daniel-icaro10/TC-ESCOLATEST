@@ -4,7 +4,7 @@ Sistema de gestão escolar com controle de acesso por catraca Control iD e porta
 
 O sistema roda **num computador da escola** (o mesmo que fica na rede da catraca), e os outros computadores usam pelo navegador. Os dados ficam num banco SQLite dentro da escola, com backup automático todo dia.
 
-Não tem dependências nem etapa de build. Precisa só do **Node.js 22.13 ou mais novo** (a versão LTS do site oficial serve).
+Com SQLite não tem dependências nem etapa de build. Precisa só do **Node.js 22.13 ou mais novo** (a versão LTS do site oficial serve). Para usar Postgres, veja "Banco de dados: SQLite ou Postgres".
 
 ## O que o sistema faz
 
@@ -118,19 +118,24 @@ Cartão com número impresso no formato `área,código` (ex.: `123,45678`) é gr
 
 ## Demonstração online (Render)
 
-O `render.yaml` sobe `servidor/demo-online.js`: sistema, dados fictícios e catraca simulada num só processo, com tudo na memória. O cliente abre o link e testa pelo navegador, inclusive a foto pela webcam. Os dados voltam ao estado inicial quando o serviço reinicia. No plano gratuito o serviço "dorme" depois de 15 minutos parado e leva cerca de 1 minuto para acordar.
+O `render.yaml` sobe `servidor/demo-online.js` (sistema e catraca simulada num só processo) e um **Postgres Free** do Render. O cliente abre o link e testa pelo navegador, inclusive a foto pela webcam. Na primeira vez o banco recebe dados fictícios e os usuários de teste (senha `demo1234`); depois disso, o que for cadastrado **fica salvo**, mesmo com o serviço reiniciando. No plano gratuito o serviço "dorme" depois de 15 minutos parado e leva cerca de 1 minuto para acordar, e o Postgres free expira 30 dias depois de criado.
+
+Para ligar o banco num serviço que já existe no Render (sem Blueprint):
+
+1. **New > Postgres**, plano Free, na mesma região do serviço web.
+2. No banco criado, copie a **Internal Database URL**.
+3. No serviço web: em **Environment**, crie `DATABASE_URL` com essa URL; em **Settings**, troque o Build Command para `npm ci --omit=dev`.
+4. Faça um novo deploy. No log deve aparecer `Banco de dados: Postgres (...)`.
 
 O `modoDemo` só existe para esse serviço com catraca simulada. Nunca use `config.online.json` numa instalação real.
 
-## Sistema real no Render (banco persistente)
+## Banco de dados: SQLite ou Postgres
 
-O mesmo `render.yaml` também cria o serviço `portal-escolar`, com o banco SQLite num **disco persistente** do Render montado em `/var/data` (arquivo `/var/data/escola.db`, backups diários em `/var/data/backups`). Usa `servidor/config.render.json`: sem dados fictícios, sem `modoDemo`, e com `atrasDeProxy` ligado para o limite de tentativas de login enxergar o IP real de quem acessa.
+Sem a variável `DATABASE_URL`, o sistema usa SQLite (`servidor/dados/escola.db`), sem instalar nada. Com `DATABASE_URL` (Render, VPS), usa Postgres: rode `npm install` na pasta do projeto para instalar o driver `pg`. As tabelas são criadas sozinhas na primeira vez.
 
-1. No Render: **New > Blueprint**, escolha este repositório e confirme. O disco exige plano pago (Starter ou maior); no plano free não há disco.
-2. Em **portal-escolar > Environment**, copie o valor de `CODIGO_PRIMEIRO_ACESSO` (gerado pelo Render).
-3. Abra o endereço do serviço: a tela de primeiro acesso pede esse código para criar o administrador. Sem ele, ninguém que achar o link consegue tomar o sistema.
+Numa VPS com Postgres: crie o banco, defina `DATABASE_URL=postgres://usuario:senha@localhost:5432/escola` e `CONFIG=config.render.json` (sem dados fictícios, atrás de proxy) e, se o endereço for público, `CODIGO_PRIMEIRO_ACESSO` com um código só seu: a tela de primeiro acesso pede esse código para criar o administrador. No Postgres o botão "Baixar backup" gera um arquivo JSON com todas as tabelas; o backup completo fica a cargo do `pg_dump` ou do provedor.
 
-Também dá para mudar o caminho do banco pela variável de ambiente `BANCO`. A catraca de verdade fica na rede da escola e o Render não a alcança sem um túnel até lá.
+O código continua escrevendo o SQL no formato do SQLite: `servidor/db-postgres.js` traduz para o Postgres e roda as consultas numa thread separada (`db-postgres-worker.js`), mantendo a mesma API síncrona do `db.js`. Ao mudar o banco, acrescente a migração nos dois arquivos (`MIGRACOES` e `MIGRACOES_PG`).
 
 ## Estrutura
 
@@ -144,6 +149,8 @@ public/                    portal (HTML, CSS e JavaScript, sem build)
 servidor/
   server.js                servidor HTTP, portal, API e backup
   db.js                    banco SQLite e migrações (versão do banco em PRAGMA user_version)
+  db-postgres.js           banco Postgres (DATABASE_URL): tradução do SQL e migrações
+  db-postgres-worker.js    thread que conversa com o Postgres
   auth.js                  login, sessões, usuários e permissões
   escola.js                turmas, alunos, responsáveis, professores, notas
   academico.js             importação por planilha e histórico escolar

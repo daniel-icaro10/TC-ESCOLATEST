@@ -68,7 +68,7 @@ function exemplo(db) {
           if (f) db.rodar('INSERT INTO faltas (aluno_id, disciplina_id, ano_letivo, bimestre, qtd) VALUES (?, ?, ?, 1, ?)', alunoId, d.id, ano, f);
         });
         // financeiro de demonstração: mensalidades de fevereiro até o mês atual, quase todas pagas
-        if (db.um("SELECT 1 FROM sqlite_master WHERE name = 'cobrancas'")) {
+        {
           const bolsa = R() < .1 ? 50 : 0, mesAtual = new Date().getFullYear() === ano ? new Date().getMonth() + 1 : 12;
           for (let m = 2; m <= Math.min(12, mesAtual); m++) {
             const comp = `${ano}-${String(m).padStart(2, '0')}`, venc = `${comp}-10`;

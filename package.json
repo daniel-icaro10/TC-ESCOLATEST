@@ -1,0 +1,15 @@
+{
+  "name": "portal-escolar",
+  "private": true,
+  "description": "Portal escolar: servidor Node sem framework, banco SQLite (na escola) ou Postgres (DATABASE_URL)",
+  "scripts": {
+    "start": "node servidor/server.js",
+    "demo": "node servidor/demo-online.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}

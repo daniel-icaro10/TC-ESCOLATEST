@@ -1,41 +1,29 @@
 # Blueprint do Render.
-services:
-  # Sistema de verdade da escola, com o banco SQLite num disco persistente do Render.
-  # O disco só existe nos planos pagos (Starter ou maior): no plano free os dados se perderiam a cada deploy.
-  # Backups: o servidor guarda uma cópia por dia em /var/data/backups (últimos 30 dias) e o Render
-  # tira um snapshot diário do disco. O administrador também pode baixar o banco pelo portal.
-  # A catraca real fica na rede da escola: o Render não a alcança sem um túnel até lá.
-  - type: web
-    name: portal-escolar
-    runtime: node
-    plan: starter
-    region: virginia
-    buildCommand: echo "Sem dependências para instalar"
-    startCommand: node servidor/server.js
-    healthCheckPath: /api/sessao
-    disk:
-      name: dados-escola
-      mountPath: /var/data
-      sizeGB: 1
-    envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: CONFIG
-        value: config.render.json
-      # pedido na tela de primeiro acesso (criar o administrador); veja o valor em Environment no painel do Render
-      - key: CODIGO_PRIMEIRO_ACESSO
-        generateValue: true
+#
+# Demonstração para o cliente: sistema + catraca SIMULADA, com os dados num Postgres do Render.
+# O que for cadastrado fica salvo (não some mais ao reiniciar). Na primeira vez o banco é preenchido
+# com dados fictícios e usuários de teste (senha demo1234).
+#
+# Atenção: o Postgres do plano free do Render expira 30 dias depois de criado. Para uso de verdade,
+# use um plano pago ou leve para a VPS (basta apontar DATABASE_URL para o Postgres de lá).
+databases:
+  - name: portal-escolar-db
+    plan: free
+    databaseName: escola
+    user: escola
 
-  # Demonstração com dados fictícios e catraca SIMULADA (não fala com equipamento real).
-  # Sobe o portal + o servidor + o simulador num só processo. Os dados ficam só na memória
-  # e voltam ao estado inicial quando o serviço reinicia.
+services:
   - type: web
     name: portal-escolar-demo-catraca
     runtime: node
     plan: free
-    buildCommand: echo "Sem dependências para instalar"
+    buildCommand: npm ci --omit=dev
     startCommand: node servidor/demo-online.js
     healthCheckPath: /api/sessao
     envVars:
       - key: NODE_VERSION
         value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: portal-escolar-db
+          property: connectionString

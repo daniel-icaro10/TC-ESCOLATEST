@@ -17,12 +17,12 @@ function criarEscola(db, ganchos = {}) {
   function dados(usuario) {
     const escola = db.config('escola', {});
     const disciplinas = db.todos('SELECT id, nome, ordem, carga_horaria AS carga FROM disciplinas ORDER BY ordem, nome');
-    let turmas = db.todos('SELECT id, ano_letivo AS anoLetivo, serie, nome, turno, nivel, criterio, finalizada, bloqueada FROM turmas ORDER BY ano_letivo DESC, serie, nome');
-    const vinculos = db.todos('SELECT turma_id AS turmaId, disciplina_id AS disciplinaId, professor_id AS professorId, entregue FROM turma_disciplinas');
+    let turmas = db.todos('SELECT id, ano_letivo AS anoLetivo, serie, nome, turno, nivel, criterio, finalizada, bloqueada FROM turmas ORDER BY ano_letivo DESC, serie, nome, id');
+    const vinculos = db.todos('SELECT turma_id AS turmaId, disciplina_id AS disciplinaId, professor_id AS professorId, entregue FROM turma_disciplinas ORDER BY turma_id, disciplina_id');
     let alunos = db.todos(`SELECT id, matricula, nome, nascimento, turma_id AS turmaId, situacao, sexo, cpf, naturalidade, endereco, observacoes,
-      consentimento_biometria AS consentimentoBiometria, consentimento_em AS consentimentoEm FROM alunos ORDER BY nome`);
-    let professores = db.todos('SELECT id, nome, email, tel, ativo FROM professores ORDER BY nome');
-    let responsaveis = db.todos('SELECT id, aluno_id AS alunoId, nome, parentesco, tel, email, cpf FROM responsaveis ORDER BY nome');
+      consentimento_biometria AS consentimentoBiometria, consentimento_em AS consentimentoEm FROM alunos ORDER BY nome, id`);
+    let professores = db.todos('SELECT id, nome, email, tel, ativo FROM professores ORDER BY nome, id');
+    let responsaveis = db.todos('SELECT id, aluno_id AS alunoId, nome, parentesco, tel, email, cpf FROM responsaveis ORDER BY nome, id');
     // só as notas do ano da turma atual de cada aluno; anos anteriores ficam no histórico escolar
     let notas = db.todos('SELECT n.aluno_id a, n.disciplina_id d, n.bimestre b, n.at, n.tbl, n.te, n.pr, n.rp FROM notas n JOIN alunos al ON al.id = n.aluno_id JOIN turmas t ON t.id = al.turma_id WHERE n.ano_letivo = t.ano_letivo').map(n => [n.a, n.d, n.b, n.at, n.tbl, n.te, n.pr, n.rp]);
     let faltas = db.todos('SELECT f.aluno_id a, f.disciplina_id d, f.bimestre b, f.qtd FROM faltas f JOIN alunos al ON al.id = f.aluno_id JOIN turmas t ON t.id = al.turma_id WHERE f.ano_letivo = t.ano_letivo AND f.qtd > 0').map(f => [f.a, f.d, f.b, f.qtd]);
@@ -291,7 +291,7 @@ function criarEscola(db, ganchos = {}) {
     rota('POST', '/api/disciplinas', 'cadastros', ({ corpo, auditar }) => {
       const nome = valida.texto(corpo.nome, 'o nome da disciplina', { obrigatorio: true, max: 80 });
       const carga = valida.inteiro(corpo.carga ?? 80, 'Carga horária', 0, 2000);
-      if (db.um('SELECT 1 FROM disciplinas WHERE nome = ?', nome)) throw new ErroHttp('Essa disciplina já existe.', 409);
+      if (db.um('SELECT 1 FROM disciplinas WHERE lower(nome) = lower(?)', nome)) throw new ErroHttp('Essa disciplina já existe.', 409);
       return db.transacao(() => {
         const ordem = (db.um('SELECT MAX(ordem) m FROM disciplinas').m ?? -1) + 1;
         const id = db.rodar('INSERT INTO disciplinas (nome, ordem, carga_horaria) VALUES (?, ?, ?)', nome, ordem, carga).id;
@@ -304,7 +304,7 @@ function criarEscola(db, ganchos = {}) {
     rota('PUT', '/api/disciplinas/:id', 'cadastros', ({ params, corpo, auditar }) => {
       const atual = precisa(db.um('SELECT * FROM disciplinas WHERE id = ?', valida.inteiro(params.id, 'Disciplina', 1)), 'Disciplina não encontrada.');
       const nome = valida.texto(corpo.nome ?? atual.nome, 'o nome da disciplina', { obrigatorio: true, max: 80 });
-      if (db.um('SELECT 1 FROM disciplinas WHERE nome = ? AND id <> ?', nome, atual.id)) throw new ErroHttp('Essa disciplina já existe.', 409);
+      if (db.um('SELECT 1 FROM disciplinas WHERE lower(nome) = lower(?) AND id <> ?', nome, atual.id)) throw new ErroHttp('Essa disciplina já existe.', 409);
       db.rodar('UPDATE disciplinas SET nome = ?, carga_horaria = ? WHERE id = ?', nome, valida.inteiro(corpo.carga ?? atual.carga_horaria, 'Carga horária', 0, 2000), atual.id);
       auditar('alterou disciplina', nome);
       return { ok: true };

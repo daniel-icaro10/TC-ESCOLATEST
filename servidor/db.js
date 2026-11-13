@@ -217,6 +217,7 @@ function abrir(arquivo) {
   const stmt = sql => { let s = cache.get(sql); if (!s) { s = db.prepare(sql); cache.set(sql, s); } return s; };
 
   const api = {
+    tipo: 'sqlite',
     arquivo,
     todos: (sql, ...p) => stmt(sql).all(...prep(p)),
     um: (sql, ...p) => stmt(sql).get(...prep(p)) || null,

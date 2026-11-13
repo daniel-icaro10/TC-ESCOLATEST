@@ -39,13 +39,17 @@ function criarFamilia(db, { auth, catraca, financeiro }) {
       if (!cfg().mostrarFinanceiro) return [];
       const ids = meusAlunos(usuario).map(a => a.id);
       if (!ids.length) return [];
-      return db.todos(`SELECT * FROM cobrancas WHERE cancelada = 0 AND aluno_id IN (${ids.map(() => '?').join(',')}) ORDER BY vencimento DESC`, ...ids).map(financeiro.publica);
+      return db.todos(`SELECT * FROM cobrancas WHERE cancelada = 0 AND aluno_id IN (${ids.map(() => '?').join(',')}) ORDER BY vencimento DESC, id`, ...ids).map(financeiro.publica);
     });
 
     /* ----- a secretaria cria e gerencia os acessos ----- */
-    rota('GET', '/api/familia/usuarios', 'cadastros', () => db.todos(`SELECT u.id, u.nome, u.login, u.ativo, u.ultimo_acesso ultimoAcesso,
-      (SELECT group_concat(aluno_id) FROM usuario_alunos WHERE usuario_id = u.id) alunos FROM usuarios u WHERE u.papel = 'familia' ORDER BY u.nome`)
-      .map(u => ({ ...u, ativo: !!u.ativo, alunos: u.alunos ? String(u.alunos).split(',').map(Number) : [] })));
+    rota('GET', '/api/familia/usuarios', 'cadastros', () => {
+      const porUsuario = new Map();
+      db.todos("SELECT ua.usuario_id u, ua.aluno_id a FROM usuario_alunos ua JOIN usuarios x ON x.id = ua.usuario_id WHERE x.papel = 'familia' ORDER BY ua.aluno_id")
+        .forEach(r => { if (!porUsuario.has(r.u)) porUsuario.set(r.u, []); porUsuario.get(r.u).push(r.a); });
+      return db.todos("SELECT u.id, u.nome, u.login, u.ativo, u.ultimo_acesso ultimoAcesso FROM usuarios u WHERE u.papel = 'familia' ORDER BY u.nome")
+        .map(u => ({ ...u, ativo: !!u.ativo, alunos: porUsuario.get(u.id) || [] }));
+    });
     rota('POST', '/api/familia/usuarios', 'cadastros', ({ corpo, auditar }) => {
       const d = auth.dadosUsuario({ ...corpo, papel: 'familia', permitirFamilia: true }, true);
       const alunos = alunosValidos(corpo.alunos);

@@ -4,10 +4,12 @@
  * ---------------------------------------------------------------
  * Roda num computador da escola (o mesmo que fica na rede da catraca).
  * - Serve o portal (pasta public) para os computadores da rede da escola.
- * - Guarda os dados no banco SQLite em servidor/dados/escola.db (backup diário em dados/backups).
+ * - Guarda os dados no banco SQLite em servidor/dados/escola.db (backup diário em dados/backups),
+ *   ou num Postgres quando existe a variável DATABASE_URL (Render, VPS).
  * - Fala com a catraca Control iD.
  *
- * Sem dependências: precisa só do Node.js 22.13 ou mais novo (versão LTS).
+ * Precisa do Node.js 22.13 ou mais novo (versão LTS). Com SQLite não precisa instalar nada;
+ * com Postgres, rode "npm install" na pasta do projeto (instala o driver pg).
  *   node servidor/server.js
  */
 'use strict';
@@ -58,12 +60,18 @@ if (process.env.BANCO) cfg.banco = process.env.BANCO;           // caminho do ba
 
 const PASTA_PORTAL = path.join(__dirname, '..', 'public');
 const TEM_PORTAL = fs.existsSync(path.join(PASTA_PORTAL, 'index.html'));
-const ARQ_BANCO = cfg.banco === ':memory:' ? ':memory:' : path.resolve(__dirname, cfg.banco);
+const URL_POSTGRES = process.env.DATABASE_URL || '';
+const ARQ_BANCO = URL_POSTGRES ? null : cfg.banco === ':memory:' ? ':memory:' : path.resolve(__dirname, cfg.banco);
+const NOME_BANCO = URL_POSTGRES ? `Postgres (${URL_POSTGRES.replace(/^[^@]*@/, '').replace(/\?.*$/, '')})` : ARQ_BANCO === ':memory:' ? 'só na memória (demonstração)' : ARQ_BANCO;
 
 /* ---------------- Banco e módulos ---------------- */
 let db;
-try { db = abrir(ARQ_BANCO); }
-catch (e) { console.error('Não consegui abrir o banco de dados', ARQ_BANCO, '-', e.message); process.exit(1); }
+try { db = URL_POSTGRES ? require('./db-postgres').abrirPostgres(URL_POSTGRES) : abrir(ARQ_BANCO); }
+catch (e) {
+  console.error('Não consegui abrir o banco de dados', NOME_BANCO, '-', e.message);
+  if (e.code === 'MODULE_NOT_FOUND') console.error('Falta o driver do Postgres: rode "npm install" na pasta do projeto.');
+  process.exit(1);
+}
 semente.basico(db);
 
 function auditar(usuario, acao, detalhe) {
@@ -91,6 +99,12 @@ criarFamilia(db, { auth, catraca, financeiro }).registrar(roteador.rota);
 
 /* download do backup pelo portal (administrador): uma cópia consistente do banco, feita na hora */
 roteador.rota('GET', '/api/backup', 'config', ({ res, auditar }) => {
+  if (db.tipo === 'postgres') {   // Postgres: todos os dados num arquivo JSON
+    const dados = Buffer.from(JSON.stringify(db.exportar()));
+    auditar('baixou o backup do banco');
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="escola-${new Date().toISOString().slice(0, 10)}.json"`, 'Cache-Control': 'no-store', ...CABECALHOS_SEGURANCA });
+    return res.end(dados);
+  }
   const tmp = path.join(require('os').tmpdir(), `portal-backup-${process.pid}-${Date.now()}.db`);
   try {
     db.exec(`VACUUM INTO '${tmp.replace(/'/g, "''")}'`);
@@ -106,7 +120,7 @@ function fazerBackup() {
   try { const f = db.backup(path.join(path.dirname(ARQ_BANCO), 'backups')); if (f) console.log(new Date().toLocaleString('pt-BR'), 'backup do banco:', f); }
   catch (e) { console.error('Falha no backup do banco:', e.message); }
 }
-if (ARQ_BANCO !== ':memory:') { fazerBackup(); setInterval(fazerBackup, 3600 * 1000).unref(); }
+if (ARQ_BANCO && ARQ_BANCO !== ':memory:') { fazerBackup(); setInterval(fazerBackup, 3600 * 1000).unref(); }
 
 /* ---------------- Portal (arquivos estáticos) ---------------- */
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.svg': 'image/svg+xml', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -209,7 +223,7 @@ servidor.listen(cfg.porta, cfg.host, () => {
   console.log('');
   console.log(`Portal escolar rodando. Neste computador: http://localhost:${cfg.porta}`);
   if (cfg.host === '0.0.0.0' && !cfg.modoDemo && !cfg.atrasDeProxy) enderecosDaRede().forEach(ip => console.log(`Nos outros computadores da escola:  http://${ip}:${cfg.porta}`));
-  console.log(`Banco de dados: ${ARQ_BANCO === ':memory:' ? 'só na memória (demonstração)' : ARQ_BANCO}`);
+  console.log(`Banco de dados: ${NOME_BANCO}`);
   const c = catraca.configPublica();
   console.log(c.configurada ? `Catraca Control iD em ${c.ip} · ação de liberar: ${c.acaoLiberar}` : 'Catraca ainda não configurada (configure pelo portal).');
   if (cfg.dadosExemplo) console.log('DEMONSTRAÇÃO: dados fictícios. Usuários de teste: admin.demo, secretaria.demo, coordenacao.demo, professor.demo, portaria.demo, financeiro.demo, familia.demo (senha demo1234).');

@@ -254,7 +254,7 @@ function criarCatraca(db, { inicial = null, modoDemo = false, auditarSistema = (
     // a catraca é a fonte da verdade: atualiza o que o sistema lembra
     db.transacao(() => {
       db.rodar('DELETE FROM catraca_status');
-      lista.forEach(u => { if (/^\d+$/.test(String(u.matricula))) db.rodar('INSERT OR REPLACE INTO catraca_status (matricula, facial, cartao, senha) VALUES (?, ?, ?, ?)', Number(u.matricula), u.facial, u.cartao, u.senha); });
+      lista.forEach(u => { if (/^\d+$/.test(String(u.matricula))) db.rodar('INSERT INTO catraca_status (matricula, facial, cartao, senha) VALUES (?, ?, ?, ?) ON CONFLICT(matricula) DO UPDATE SET facial = excluded.facial, cartao = excluded.cartao, senha = excluded.senha', Number(u.matricula), u.facial, u.cartao, u.senha); });
     });
     return lista;
   }

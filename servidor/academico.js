@@ -54,12 +54,12 @@ function criarAcademico(db, escola) {
           const mat = String(l.matricula || '').replace(/\D/g, '');
           let existente = mat ? db.um('SELECT id FROM alunos WHERE matricula = ?', Number(mat)) : null;
           // sem matrícula na planilha: considera repetido quem tem o mesmo nome e nascimento
-          if (!existente && !mat) existente = db.um('SELECT id FROM alunos WHERE nome = ? COLLATE NOCASE AND nascimento = ?', dados.nome, dados.nascimento);
+          if (!existente && !mat) existente = db.um('SELECT id FROM alunos WHERE lower(nome) = lower(?) AND nascimento = ?', dados.nome, dados.nascimento);
           if (existente) {
             if (!corpo.atualizar) { resultado.ignorados++; return; }
             db.rodar('UPDATE alunos SET nome = ?, nascimento = ?, turma_id = ?, sexo = COALESCE(?, sexo), cpf = COALESCE(?, cpf), naturalidade = COALESCE(NULLIF(?, \'\'), naturalidade), endereco = COALESCE(NULLIF(?, \'\'), endereco) WHERE id = ?',
               dados.nome, dados.nascimento, turmaId, dados.sexo, dados.cpf, dados.naturalidade, dados.endereco, existente.id);
-            if (resp && !db.um('SELECT 1 FROM responsaveis WHERE aluno_id = ? AND nome = ? COLLATE NOCASE', existente.id, resp.nome))
+            if (resp && !db.um('SELECT 1 FROM responsaveis WHERE aluno_id = ? AND lower(nome) = lower(?)', existente.id, resp.nome))
               db.rodar('INSERT INTO responsaveis (aluno_id, nome, parentesco, tel, email, cpf) VALUES (?, ?, ?, ?, ?, ?)', existente.id, resp.nome, resp.parentesco, resp.tel, resp.email, resp.cpf);
             escola.sincronizarMatricula(existente.id);
             resultado.atualizados++;
