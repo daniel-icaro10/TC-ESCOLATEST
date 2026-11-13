@@ -16,4 +16,6 @@ servidor/config.json
 servidor/dados/
 servidor/*.tmp
 
-node_modules/
+
+# O driver do Postgres (pg) fica no repositório de propósito: assim o sistema roda sem etapa de build
+# (no Render funciona mesmo com o Build Command vazio). Para atualizar: npm install pg@8 e commitar node_modules.
