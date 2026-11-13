@@ -4,13 +4,19 @@
    e avisa pelo contador compartilhado. Uma conexão só: as transações (BEGIN/COMMIT) ficam
    sempre na mesma conexão, como no SQLite. */
 const { workerData } = require('worker_threads');
-const pg = require('pg');
 
 const { porta, sinal, url, fusoHorario } = workerData;
 const contador = new Int32Array(sinal);
 
-pg.types.setTypeParser(20, v => v === null ? null : Number(v));     // bigint (COUNT, SUM, matrícula) vira número
-pg.types.setTypeParser(1700, v => v === null ? null : Number(v));   // numeric vira número
+// sem o driver instalado, responde o erro em vez de cair calada (o servidor ficaria esperando)
+let pg = null, faltaDriver = null;
+try { pg = require('pg'); }
+catch (e) { faltaDriver = { message: 'Falta o driver do Postgres (pacote "pg"). Rode "npm install" (no Render, Build Command: npm ci --omit=dev).', code: 'MODULE_NOT_FOUND' }; }
+
+if (pg) {
+  pg.types.setTypeParser(20, v => v === null ? null : Number(v));     // bigint (COUNT, SUM, matrícula) vira número
+  pg.types.setTypeParser(1700, v => v === null ? null : Number(v));   // numeric vira número
+}
 
 // o Render (e a maioria dos provedores) exige SSL na conexão de fora; a URL interna do Render não usa
 const precisaSsl = /sslmode=(require|verify-ca|verify-full|prefer)/.test(url) || /\.render\.com/.test(url) || process.env.PGSSL === '1';
@@ -31,6 +37,7 @@ function responder(msg) {
 }
 
 porta.on('message', async ({ id, sql, params }) => {
+  if (faltaDriver) return responder({ id, erro: faltaDriver });
   if (sql === null) {   // pedido para encerrar
     try { if (cliente) await cliente.end(); } catch (e) { /* já fechada */ }
     return responder({ id, ok: true });
