@@ -1,7 +1,31 @@
-# Blueprint do Render: demonstração online do sistema.
-# O sistema de verdade roda no computador da escola (servidor/iniciar.bat), porque precisa
-# estar na mesma rede da catraca e guarda os dados dos alunos dentro da escola.
+# Blueprint do Render.
 services:
+  # Sistema de verdade da escola, com o banco SQLite num disco persistente do Render.
+  # O disco só existe nos planos pagos (Starter ou maior): no plano free os dados se perderiam a cada deploy.
+  # Backups: o servidor guarda uma cópia por dia em /var/data/backups (últimos 30 dias) e o Render
+  # tira um snapshot diário do disco. O administrador também pode baixar o banco pelo portal.
+  # A catraca real fica na rede da escola: o Render não a alcança sem um túnel até lá.
+  - type: web
+    name: portal-escolar
+    runtime: node
+    plan: starter
+    region: virginia
+    buildCommand: echo "Sem dependências para instalar"
+    startCommand: node servidor/server.js
+    healthCheckPath: /api/sessao
+    disk:
+      name: dados-escola
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: CONFIG
+        value: config.render.json
+      # pedido na tela de primeiro acesso (criar o administrador); veja o valor em Environment no painel do Render
+      - key: CODIGO_PRIMEIRO_ACESSO
+        generateValue: true
+
   # Demonstração com dados fictícios e catraca SIMULADA (não fala com equipamento real).
   # Sobe o portal + o servidor + o simulador num só processo. Os dados ficam só na memória
   # e voltam ao estado inicial quando o serviço reinicia.

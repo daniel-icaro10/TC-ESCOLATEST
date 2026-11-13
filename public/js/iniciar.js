@@ -5,6 +5,7 @@
     const s = await api('sessao');
     SESSAO.escola = s.escola || {};
     SESSAO.demo = !!s.demo;
+    SESSAO.pedeCodigo = !!s.pedeCodigo;
     if (s.primeiroAcesso) return mostrarPrimeiroAcesso();
     if (!s.usuario) return mostrarLogin();
     await entrou(s.usuario);

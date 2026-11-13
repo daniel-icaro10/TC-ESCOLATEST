@@ -1,0 +1,8 @@
+{
+  "host": "0.0.0.0",
+  "porta": 8787,
+  "banco": "/var/data/escola.db",
+  "dadosExemplo": false,
+  "modoDemo": false,
+  "atrasDeProxy": true
+}

@@ -43,6 +43,7 @@ const PADRAO = {
   banco: 'dados/escola.db',  // relativo à pasta servidor; ":memory:" = sem salvar (demonstração online)
   dadosExemplo: false,       // cria turmas, alunos e usuários de teste (só para demonstrações)
   modoDemo: false,           // demonstração online pública: catraca presa ao simulador
+  atrasDeProxy: false,       // hospedado atrás de um proxy (Render): o IP real do usuário vem no cabeçalho
   catraca: null              // configuração inicial da catraca; depois ela é editada pela tela e fica no banco
 };
 const ARQ_CONFIG = path.resolve(__dirname, process.env.CONFIG || process.env.PONTE_CONFIG || 'config.json');
@@ -53,6 +54,7 @@ try {
   if (e.code !== 'ENOENT') { console.error(`${path.basename(ARQ_CONFIG)} inválido:`, e.message); process.exit(1); }
 }
 if (process.env.PORT) cfg.porta = Number(process.env.PORT);   // o Render define a porta por variável de ambiente
+if (process.env.BANCO) cfg.banco = process.env.BANCO;           // caminho do banco no disco persistente do Render
 
 const PASTA_PORTAL = path.join(__dirname, '..', 'public');
 const TEM_PORTAL = fs.existsSync(path.join(PASTA_PORTAL, 'index.html'));
@@ -69,7 +71,8 @@ function auditar(usuario, acao, detalhe) {
   catch (e) { console.error('auditoria:', e.message); }
 }
 
-const auth = criarAuth(db, { demo: !!cfg.dadosExemplo });
+// com o sistema exposto na internet, o primeiro acesso (criar o administrador) pede este código, que só o dono do serviço conhece
+const auth = criarAuth(db, { demo: !!cfg.dadosExemplo, codigoPrimeiroAcesso: process.env.CODIGO_PRIMEIRO_ACESSO || '' });
 if (cfg.dadosExemplo) { semente.exemplo(db); auth.usuariosDemo(); }
 const catraca = criarCatraca(db, { inicial: cfg.catraca, modoDemo: !!cfg.modoDemo, auditarSistema: (a, d) => auditar(null, a, d) });
 const escola = criarEscola(db, { alunoSaiu: (mat, d) => catraca.alunoSaiu(mat, d) });
@@ -133,11 +136,11 @@ function servirArquivo(req, res, caminhoUrl) {
 /* ---------------- API ---------------- */
 const MUTAVEIS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 function ipDe(req) {
-  // Atrás de um proxy o IP real vem no cabeçalho: no Render (modoDemo) e no túnel da Cloudflare, que entrega os
+  // Atrás de um proxy o IP real vem no cabeçalho: no Render (modoDemo/atrasDeProxy) e no túnel da Cloudflare, que entrega os
   // pedidos pelo próprio computador (127.0.0.1). Pedidos diretos da rede da escola usam o IP da conexão.
   const direto = req.socket.remoteAddress || '';
   const local = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(direto);
-  if (!cfg.modoDemo && !local) return direto;
+  if (!cfg.modoDemo && !cfg.atrasDeProxy && !local) return direto;
   const cf = req.headers['cf-connecting-ip'], xff = req.headers['x-forwarded-for'];
   if (cf) return String(cf).trim();
   if (xff) return String(xff).split(',')[0].trim();
@@ -205,7 +208,7 @@ function enderecosDaRede() {
 servidor.listen(cfg.porta, cfg.host, () => {
   console.log('');
   console.log(`Portal escolar rodando. Neste computador: http://localhost:${cfg.porta}`);
-  if (cfg.host === '0.0.0.0' && !cfg.modoDemo) enderecosDaRede().forEach(ip => console.log(`Nos outros computadores da escola:  http://${ip}:${cfg.porta}`));
+  if (cfg.host === '0.0.0.0' && !cfg.modoDemo && !cfg.atrasDeProxy) enderecosDaRede().forEach(ip => console.log(`Nos outros computadores da escola:  http://${ip}:${cfg.porta}`));
   console.log(`Banco de dados: ${ARQ_BANCO === ':memory:' ? 'só na memória (demonstração)' : ARQ_BANCO}`);
   const c = catraca.configPublica();
   console.log(c.configurada ? `Catraca Control iD em ${c.ip} · ação de liberar: ${c.acaoLiberar}` : 'Catraca ainda não configurada (configure pelo portal).');

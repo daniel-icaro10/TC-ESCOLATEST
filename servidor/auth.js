@@ -54,7 +54,7 @@ function validaSenhaNova(senha) {
   return s;
 }
 
-function criarAuth(db, { demo = false } = {}) {
+function criarAuth(db, { demo = false, codigoPrimeiroAcesso = '' } = {}) {
   const tentativas = new Map();   // chave ip|login -> { n, ate }
   const hashToken = t => crypto.createHash('sha256').update(t).digest('hex');
 
@@ -100,6 +100,7 @@ function criarAuth(db, { demo = false } = {}) {
     rota('GET', '/api/sessao', null, ({ usuario }) => ({
       usuario: usuario ? publico(usuario) : null,
       primeiroAcesso: precisaPrimeiroAcesso(),
+      pedeCodigo: !!codigoPrimeiroAcesso && precisaPrimeiroAcesso(),
       demo,
       escola: db.config('escola', {})
     }));
@@ -126,6 +127,11 @@ function criarAuth(db, { demo = false } = {}) {
     /* cria o primeiro administrador; só funciona com o banco sem nenhum usuário */
     rota('POST', '/api/primeiro-acesso', null, ({ req, res, corpo, auditar }) => {
       if (!precisaPrimeiroAcesso()) throw new ErroHttp('O administrador já foi criado. Entre com usuário e senha.', 409);
+      if (codigoPrimeiroAcesso) {
+        const a = crypto.createHash('sha256').update(String(corpo.codigo || '').trim()).digest();
+        const b = crypto.createHash('sha256').update(codigoPrimeiroAcesso).digest();
+        if (!crypto.timingSafeEqual(a, b)) throw new ErroHttp('Código de instalação incorreto. Ele está nas variáveis de ambiente do serviço no Render (CODIGO_PRIMEIRO_ACESSO).', 403);
+      }
       const nome = valida.texto(corpo.nome, 'o seu nome', { obrigatorio: true, max: 120 });
       const login = validaLogin(corpo.login);
       const senha = validaSenhaNova(corpo.senha);

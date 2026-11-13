@@ -394,6 +394,7 @@ function mostrarPrimeiroAcesso() {
       <div class="logo">${logoSvg}<div><b>Portal escolar</b><small>Primeiro acesso</small></div></div>
       <h1>Bem-vindo! Crie o administrador</h1>
       <p>Este é o primeiro acesso ao sistema. Crie o usuário administrador: ele cadastra os outros usuários e configura a escola e a catraca.</p>
+      ${SESSAO.pedeCodigo ? html`<label class="field" for="paCodigo">Código de instalação *<input id="paCodigo" autocapitalize="none" spellcheck="false" autocomplete="off"><small style="text-transform:none;letter-spacing:0;font-weight:400">Fica no painel do Render, em Environment (CODIGO_PRIMEIRO_ACESSO).</small></label>` : ''}
       <label class="field" for="paEscola">Nome da escola<input id="paEscola" value="${SESSAO.escola.nome || ''}"></label>
       <label class="field" for="paNome">Seu nome *<input id="paNome" autocomplete="name"></label>
       <label class="field" for="paLogin">Usuário para entrar *<input id="paLogin" placeholder="Ex.: maria.souza" autocapitalize="none" spellcheck="false" autocomplete="username"></label>
@@ -402,14 +403,14 @@ function mostrarPrimeiroAcesso() {
       <div id="paErro" role="alert"></div>
       <button class="btn blue" type="submit">Criar administrador e entrar</button>
     </form>`;
-  $('paNome').focus();
+  ($('paCodigo') || $('paNome')).focus();
   $('paForm').onsubmit = async e => {
     e.preventDefault();
     const erro = m => { $('paErro').innerHTML = html`<p class="res bad">${m}</p>`; };
     if ($('paSenha').value !== $('paSenha2').value) return erro('As duas senhas não são iguais.');
     const btn = e.target.querySelector('[type=submit]'); btn.disabled = true;
     try {
-      const r = await api('primeiro-acesso', { metodo: 'POST', corpo: { escola: $('paEscola').value, nome: $('paNome').value, login: $('paLogin').value, senha: $('paSenha').value } });
+      const r = await api('primeiro-acesso', { metodo: 'POST', corpo: { codigo: $('paCodigo') ? $('paCodigo').value : '', escola: $('paEscola').value, nome: $('paNome').value, login: $('paLogin').value, senha: $('paSenha').value } });
       const s = await api('sessao'); SESSAO.escola = s.escola;
       await entrou(r.usuario);
     } catch (err) { erro(err.message); btn.disabled = false; }

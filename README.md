@@ -122,6 +122,16 @@ O `render.yaml` sobe `servidor/demo-online.js`: sistema, dados fictícios e catr
 
 O `modoDemo` só existe para esse serviço com catraca simulada. Nunca use `config.online.json` numa instalação real.
 
+## Sistema real no Render (banco persistente)
+
+O mesmo `render.yaml` também cria o serviço `portal-escolar`, com o banco SQLite num **disco persistente** do Render montado em `/var/data` (arquivo `/var/data/escola.db`, backups diários em `/var/data/backups`). Usa `servidor/config.render.json`: sem dados fictícios, sem `modoDemo`, e com `atrasDeProxy` ligado para o limite de tentativas de login enxergar o IP real de quem acessa.
+
+1. No Render: **New > Blueprint**, escolha este repositório e confirme. O disco exige plano pago (Starter ou maior); no plano free não há disco.
+2. Em **portal-escolar > Environment**, copie o valor de `CODIGO_PRIMEIRO_ACESSO` (gerado pelo Render).
+3. Abra o endereço do serviço: a tela de primeiro acesso pede esse código para criar o administrador. Sem ele, ninguém que achar o link consegue tomar o sistema.
+
+Também dá para mudar o caminho do banco pela variável de ambiente `BANCO`. A catraca de verdade fica na rede da escola e o Render não a alcança sem um túnel até lá.
+
 ## Estrutura
 
 ```
